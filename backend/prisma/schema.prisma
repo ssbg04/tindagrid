@@ -11,13 +11,16 @@ datasource db {
 }
 
 model Merchant {
-  id        String   @id @default(uuid())
-  phone     String   @unique
-  fullName  String
-  pinHash   String?
-  role      String   @default("MERCHANT") // MERCHANT, ADMIN, B2B_PARTNER
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  phone              String   @unique
+  fullName           String
+  pinHash            String?
+  securityQuestion   String?  // e.g. "PET_NAME", "MOTHER_MAIDEN_NAME", "FAVORITE_SNACK"
+  securityAnswerHash String?
+  backupEmail        String?
+  role               String   @default("MERCHANT") // MERCHANT, ADMIN, B2B_PARTNER
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   stores Store[]
 
