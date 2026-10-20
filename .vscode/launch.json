@@ -7,7 +7,10 @@
       "type": "dart",
       "deviceId": "all",
       "cwd": "${workspaceFolder}/frontend",
-      "program": "lib/main.dart"
+      "program": "lib/main.dart",
+      "env": {
+        "GRADLE_USER_HOME": "F:\\.gradle"
+      }
     },
     {
       "name": "TindaGrid: Android (ADB Device)",
@@ -15,7 +18,10 @@
       "type": "dart",
       "deviceId": "android",
       "cwd": "${workspaceFolder}/frontend",
-      "program": "lib/main.dart"
+      "program": "lib/main.dart",
+      "env": {
+        "GRADLE_USER_HOME": "F:\\.gradle"
+      }
     },
     {
       "name": "TindaGrid: Chrome (Web PWA)",

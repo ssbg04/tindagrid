@@ -1,9 +1,15 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_colors.dart';
+import 'core/localization/language_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/responsive_layout.dart';
 import 'core/utils/web_storage_helper.dart';
+import 'features/debts/debts_screen.dart';
+import 'features/gcash/gcash_screen.dart';
+import 'features/inventory/inventory_screen.dart';
+import 'features/settings/settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,17 +35,88 @@ class TindaGridApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
-      home: const PosDashboardScreen(),
+      // Web is strictly POS counter terminal; Android/Mobile includes full navigation
+      home: kIsWeb ? const PosDashboardScreen() : const MainNavigationShell(),
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// POS Demo Dashboard (All-Ages Touch-Driven Interface)
+// Main Navigation Shell for Android / Mobile
+// ---------------------------------------------------------------------------
+
+class MainNavigationShell extends ConsumerStatefulWidget {
+  const MainNavigationShell({super.key});
+
+  @override
+  ConsumerState<MainNavigationShell> createState() => _MainNavigationShellState();
+}
+
+class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
+  int _currentIndex = 0;
+
+  final List<Widget> _screens = const [
+    PosDashboardScreen(isEmbeddedInNav: true),
+    InventoryScreen(),
+    DebtsScreen(),
+    GcashScreen(),
+    SettingsScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = ref.watch(stringsProvider);
+
+    return Scaffold(
+      body: _screens[_currentIndex],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) {
+          setState(() => _currentIndex = index);
+        },
+        destinations: [
+          NavigationDestination(
+            icon: const Icon(Icons.point_of_sale_outlined),
+            selectedIcon: const Icon(Icons.point_of_sale_rounded, color: AppColors.primary),
+            label: tr.navPos,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.inventory_2_outlined),
+            selectedIcon: const Icon(Icons.inventory_2_rounded, color: AppColors.primary),
+            label: tr.navInventory,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.menu_book_outlined),
+            selectedIcon: const Icon(Icons.menu_book_rounded, color: AppColors.primary),
+            label: tr.navDebts,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.payments_outlined),
+            selectedIcon: const Icon(Icons.payments_rounded, color: AppColors.primary),
+            label: tr.navGcash,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings_rounded, color: AppColors.primary),
+            label: tr.navSettings,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// POS Dashboard Screen (All-Ages Touch-Driven Counter Interface)
 // ---------------------------------------------------------------------------
 
 class PosDashboardScreen extends ConsumerStatefulWidget {
-  const PosDashboardScreen({super.key});
+  final bool isEmbeddedInNav;
+
+  const PosDashboardScreen({
+    super.key,
+    this.isEmbeddedInNav = false,
+  });
 
   @override
   ConsumerState<PosDashboardScreen> createState() => _PosDashboardScreenState();
@@ -69,7 +146,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
     });
   }
 
-  void _showCheckoutDialog() {
+  void _showCheckoutDialog(AppStrings tr) {
     double tendered = 100.0;
     showModalBottomSheet(
       context: context,
@@ -96,7 +173,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Bayaran at Sukli',
+                          tr.checkoutModalTitle,
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         IconButton(
@@ -107,7 +184,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'KABUUANG BABAYARAN:',
+                      tr.totalPayable,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -120,7 +197,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'PERANG INABOT NG MAMIMILI:',
+                      tr.cashTendered,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -130,7 +207,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _buildQuickBillChip('Eksakto', _totalPrice, tendered, (val) {
+                        _buildQuickBillChip(tr.exactBill, _totalPrice, tendered, (val) {
                           setModalState(() => tendered = val);
                         }),
                         _buildQuickBillChip('₱50', 50.0, tendered, (val) {
@@ -169,8 +246,8 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                         children: [
                           Text(
                             sukli >= 0
-                                ? '🟢 SUKLI SA MAMIMILI:'
-                                : '⚠️ KULANG PA NG PERA:',
+                                ? tr.customerChange
+                                : tr.insufficientCash,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -201,13 +278,13 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                               setState(() => _cart.clear());
                               Navigator.pop(ctx);
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('✅ Benta naitala! Ligtas sa lokal database.'),
+                                SnackBar(
+                                  content: Text(tr.saleRecorded),
                                   backgroundColor: AppColors.primary,
                                 ),
                               );
                             },
-                      child: const Text('TAPOS NA ANG BENTA'),
+                      child: Text(tr.completeSale),
                     ),
                   ],
                 ),
@@ -239,38 +316,67 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = ref.watch(stringsProvider);
+    final currentLang = ref.watch(languageProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            const Icon(Icons.storefront, color: AppColors.primary, size: 28),
-            const SizedBox(width: 8),
-            Text(
-              'TindaGrid',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-          ],
+        titleSpacing: 0,
+        leading: const Icon(Icons.storefront, color: AppColors.primary, size: 24),
+        title: Text(
+          tr.appName,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
+          // 1-Tap Language Switcher Button
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () {
+              ref.read(languageProvider.notifier).toggleLanguage();
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(currentLang == AppLanguage.taglish ? '🇵🇭' : '🇺🇸', style: const TextStyle(fontSize: 12)),
+                  const SizedBox(width: 4),
+                  Text(
+                    currentLang == AppLanguage.taglish ? 'Taglish' : 'English',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+
+          // Offline Status Badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.check_circle, color: AppColors.primary, size: 16),
-                SizedBox(width: 4),
+                const Icon(Icons.check_circle, color: AppColors.primary, size: 14),
+                const SizedBox(width: 4),
                 Text(
-                  'Ligtas (Offline)',
-                  style: TextStyle(
+                  tr.offlineSafe,
+                  style: const TextStyle(
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontSize: 10,
                   ),
                 ),
               ],
@@ -280,36 +386,36 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
         ],
       ),
       body: ResponsiveLayout(
-        mobile: _buildMobileLayout(),
-        desktop: _buildDesktopLayout(),
+        mobile: _buildMobileLayout(tr),
+        desktop: _buildDesktopLayout(tr),
       ),
       bottomNavigationBar: ResponsiveLayout.isDesktop(context)
           ? null
-          : _buildMobileCartBottomBar(),
+          : _buildMobileCartBottomBar(tr),
     );
   }
 
   // Mobile View
-  Widget _buildMobileLayout() {
+  Widget _buildMobileLayout(AppStrings tr) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildSearchBar(),
+          _buildSearchBar(tr),
           const SizedBox(height: 20),
-          _buildTingiGridHeader(),
+          _buildTingiGridHeader(tr),
           const SizedBox(height: 12),
           _buildTingiTiles(),
           const SizedBox(height: 24),
-          _buildRecentCartList(),
+          _buildRecentCartList(tr),
         ],
       ),
     );
   }
 
   // Desktop View (Split-Screen 2-Column POS Station)
-  Widget _buildDesktopLayout() {
+  Widget _buildDesktopLayout(AppStrings tr) {
     return Row(
       children: [
         // Left Column (Catalog & Fast Tingi Grid)
@@ -320,9 +426,9 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildSearchBar(),
+                _buildSearchBar(tr),
                 const SizedBox(height: 20),
-                _buildTingiGridHeader(),
+                _buildTingiGridHeader(tr),
                 const SizedBox(height: 12),
                 _buildTingiTiles(),
               ],
@@ -331,7 +437,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
         ),
         // Right Column (Sticky Live Ticket & Checkout Panel)
         Container(
-          width: 320,
+          width: 340,
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
             border: const Border(
@@ -347,22 +453,22 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      '🛒 Kasalukuyang Kart',
+                      '🛒 ${tr.liveTicketTitle}',
                       style: Theme.of(context).textTheme.titleMedium,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Text('$_totalItems item',
+                  Text('$_totalItems ${tr.itemsCountLabel}',
                       style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ),
               const Divider(height: 24),
-              Expanded(child: _buildCartItemsList()),
+              Expanded(child: _buildCartItemsList(tr)),
               const Divider(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('KABUUAN:', style: Theme.of(context).textTheme.titleMedium),
+                  Text('${tr.totalLabel}:', style: Theme.of(context).textTheme.titleMedium),
                   Flexible(
                     child: Text(
                       '₱ ${_totalPrice.toStringAsFixed(2)}',
@@ -377,9 +483,9 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
               ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
-                onPressed: _cart.isEmpty ? null : _showCheckoutDialog,
+                onPressed: _cart.isEmpty ? null : () => _showCheckoutDialog(tr),
                 icon: const Icon(Icons.point_of_sale, size: 24),
-                label: const Text('BAYARAN / MANINGIL'),
+                label: Text(tr.checkoutButton),
               ),
             ],
           ),
@@ -388,16 +494,18 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(AppStrings tr) {
     return TextField(
       decoration: InputDecoration(
-        hintText: 'I-type ang paninda o i-scan ang barcode...',
+        hintText: tr.searchPlaceholder,
         prefixIcon: const Icon(Icons.search, size: 24),
         suffixIcon: IconButton(
           icon: const Icon(Icons.qr_code_scanner, color: AppColors.primary),
           onPressed: () {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('📷 Binubuksan ang scanner...')),
+              SnackBar(
+                content: Text(tr.isTaglish ? '📷 Binubuksan ang scanner...' : '📷 Opening camera scanner...'),
+              ),
             );
           },
         ),
@@ -405,14 +513,14 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
     );
   }
 
-  Widget _buildTingiGridHeader() {
+  Widget _buildTingiGridHeader(AppStrings tr) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
           child: Text(
-            'Mabilisan Tingi Grid',
-            style: Theme.of(context).textTheme.titleMedium,
+            tr.quickTingiTitle,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 13, fontWeight: FontWeight.bold),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -485,45 +593,60 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
     );
   }
 
-  Widget _buildRecentCartList() {
+  Widget _buildRecentCartList(AppStrings tr) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Mga Bagay sa Kart',
+          tr.recentCartTitle,
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
-        _buildCartItemsList(),
+        _buildCartItemsList(tr),
       ],
     );
   }
 
-  Widget _buildCartItemsList() {
+  Widget _buildCartItemsList([AppStrings? tr]) {
     if (_cart.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(32),
-          child: Text('Walang laman ang kart. Pindutin ang paninda sa itaas.'),
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Text(
+            tr?.emptyCartPrompt ?? 'Walang laman ang kart.',
+            style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+          ),
         ),
       );
     }
+
     return ListView.separated(
       shrinkWrap: true,
-      physics: const ClampingScrollPhysics(),
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: _cart.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 8),
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final item = _cart[index];
         return Card(
+          margin: EdgeInsets.zero,
           child: ListTile(
+            dense: true,
             title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('₱ ${item.price.toStringAsFixed(2)} bawat isa'),
+            subtitle: Text(
+              '${item.quantity}x @ ₱${item.price.toStringAsFixed(2)} ${tr?.eachPrice ?? ''}',
+            ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Text(
+                  '₱ ${(item.price * item.quantity).toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
                 IconButton(
-                  icon: const Icon(Icons.remove_circle_outline, size: 20),
+                  icon: const Icon(Icons.remove_circle_outline, color: AppColors.alert, size: 20),
                   onPressed: () {
                     setState(() {
                       if (item.quantity > 1) {
@@ -534,16 +657,6 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                     });
                   },
                 ),
-                Text(
-                  '${item.quantity}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add_circle_outline, size: 20),
-                  onPressed: () {
-                    setState(() => item.quantity++);
-                  },
-                ),
               ],
             ),
           ),
@@ -552,7 +665,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
     );
   }
 
-  Widget _buildMobileCartBottomBar() {
+  Widget _buildMobileCartBottomBar(AppStrings tr) {
     if (_cart.isEmpty) return const SizedBox.shrink();
 
     return Container(
@@ -576,7 +689,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '$_totalItems bagay sa kart',
+                    '$_totalItems ${tr.itemsCountLabel} sa ${tr.cartLabel.toLowerCase()}',
                     style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                   Text(
@@ -593,8 +706,8 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: ElevatedButton(
-                onPressed: _showCheckoutDialog,
-                child: const Text('MANINGIL'),
+                onPressed: () => _showCheckoutDialog(tr),
+                child: Text(tr.checkoutButton),
               ),
             ),
           ],
