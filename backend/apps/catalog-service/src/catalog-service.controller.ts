@@ -6,7 +6,17 @@ export class CatalogServiceController {
   constructor(private readonly catalogServiceService: CatalogServiceService) {}
 
   @Get()
-  getHello(): string {
-    return this.catalogServiceService.getHello();
+  getInfo() {
+    return {
+      service: 'catalog-service',
+      port: 3002,
+      status: 'online',
+      description: 'Master Philippine Barcode & Product Catalog',
+    };
+  }
+
+  @Get('health')
+  getHealth() {
+    return { status: 'ok', service: 'catalog-service' };
   }
 }

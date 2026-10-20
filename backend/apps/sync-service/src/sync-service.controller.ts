@@ -6,7 +6,17 @@ export class SyncServiceController {
   constructor(private readonly syncServiceService: SyncServiceService) {}
 
   @Get()
-  getHello(): string {
-    return this.syncServiceService.getHello();
+  getInfo() {
+    return {
+      service: 'sync-service',
+      port: 3001,
+      status: 'online',
+      description: 'Delta Synchronization & Offline Replication Engine',
+    };
+  }
+
+  @Get('health')
+  getHealth() {
+    return { status: 'ok', service: 'sync-service' };
   }
 }

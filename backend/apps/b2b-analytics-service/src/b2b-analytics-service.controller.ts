@@ -6,7 +6,17 @@ export class B2bAnalyticsServiceController {
   constructor(private readonly b2bAnalyticsServiceService: B2bAnalyticsServiceService) {}
 
   @Get()
-  getHello(): string {
-    return this.b2bAnalyticsServiceService.getHello();
+  getInfo() {
+    return {
+      service: 'b2b-analytics-service',
+      port: 3004,
+      status: 'online',
+      description: 'Anonymized FMCG Market Share & Pricing Intelligence Engine',
+    };
+  }
+
+  @Get('health')
+  getHealth() {
+    return { status: 'ok', service: 'b2b-analytics-service' };
   }
 }
