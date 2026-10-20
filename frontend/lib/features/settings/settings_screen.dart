@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/localization/language_provider.dart';
+import '../../core/sync/sync_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
 
@@ -14,6 +15,7 @@ class SettingsScreen extends ConsumerWidget {
     final tr = ref.watch(stringsProvider);
     final currentLang = ref.watch(languageProvider);
     final currentTheme = ref.watch(themeModeProvider);
+    final syncState = ref.watch(syncProvider);
     final isLight = Theme.of(context).brightness == Brightness.light;
     final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
 
@@ -244,7 +246,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
 
-          // Soft UI Cloud Sync Card
+          // Soft UI Cloud Sync & Multi-Device Sync Card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: SoftDecorations.card(context, radius: 16),
@@ -252,12 +254,47 @@ class SettingsScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.cloud_sync_outlined, color: AppColors.primary, size: 22),
-                    const SizedBox(width: 8),
-                    Text(
-                      tr.cloudBackupTitle,
-                      style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 15),
+                    Row(
+                      children: [
+                        const Icon(Icons.cloud_sync_rounded, color: AppColors.primary, size: 22),
+                        const SizedBox(width: 8),
+                        Text(
+                          tr.cloudBackupTitle,
+                          style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 15),
+                        ),
+                      ],
+                    ),
+                    // Online / Offline Status Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: syncState.isOnline
+                            ? AppColors.primaryLight.withValues(alpha: 0.3)
+                            : Colors.amber.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircleAvatar(
+                            radius: 4,
+                            backgroundColor: syncState.isOnline ? AppColors.primary : Colors.amber.shade800,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            syncState.isOnline
+                                ? (tr.isTaglish ? 'Online' : 'Online')
+                                : (tr.isTaglish ? 'Offline (Ligtas)' : 'Offline (Safe)'),
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: syncState.isOnline ? AppColors.primary : Colors.amber.shade900,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -269,25 +306,217 @@ class SettingsScreen extends ConsumerWidget {
                     color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark,
                   ),
                 ),
-                const SizedBox(height: 14),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(46),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(tr.isTaglish ? '☁️ Matagumpay na nai-sync sa Neon Cloud!' : '☁️ Successfully synced to Neon Cloud!'),
-                          backgroundColor: AppColors.primary,
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.sync_rounded, size: 18),
-                    label: Text(tr.syncNowButton, style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 12),
+
+                // Live Sync Status Box
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isLight ? AppColors.backgroundLight : AppColors.backgroundDark,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: borderColor, width: 0.8),
                   ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              tr.isTaglish ? 'Mga Bagong Benta (Naka-queue):' : 'Pending Local Changes:',
+                              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: syncState.pendingCount > 0
+                                  ? Colors.amber.withValues(alpha: 0.2)
+                                  : AppColors.primaryLight.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              syncState.pendingCount > 0
+                                  ? '${syncState.pendingCount} ${tr.isTaglish ? "naghihintay" : "pending"}'
+                                  : (tr.isTaglish ? '0 (Updated)' : '0 (Up to date)'),
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: syncState.pendingCount > 0 ? Colors.amber.shade900 : AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              tr.isTaglish ? 'Huling Na-sync:' : 'Last Cloud Sync:',
+                              style: GoogleFonts.inter(fontSize: 12, color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            syncState.lastSyncedAt != null
+                                ? '${syncState.lastSyncedAt!.hour.toString().padLeft(2, '0')}:${syncState.lastSyncedAt!.minute.toString().padLeft(2, '0')} (${syncState.lastSyncedAt!.month}/${syncState.lastSyncedAt!.day})'
+                                : (tr.isTaglish ? 'Hindi pa' : 'Not yet'),
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Action Buttons: Sync Now & Disaster Recovery
+                Row(
+                  children: [
+                    // Manual "Sync Now" Button
+                    Expanded(
+                      flex: 3,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(46),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: syncState.isSyncing
+                            ? null
+                            : () async {
+                                final scaffold = ScaffoldMessenger.of(context);
+                                try {
+                                  final success = await ref.read(syncProvider.notifier).syncNow();
+                                  scaffold.showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        success
+                                            ? (tr.isTaglish ? '☁️ Matagumpay na nai-sync sa Neon Cloud!' : '☁️ Successfully synced with Neon Cloud!')
+                                            : (tr.isTaglish ? 'Naka-offline. Ligtas ang benta sa lokal database.' : 'Offline. Sales safely preserved locally.'),
+                                      ),
+                                      backgroundColor: success ? AppColors.primary : Colors.amber.shade800,
+                                    ),
+                                  );
+                                } catch (e) {
+                                  scaffold.showSnackBar(
+                                    SnackBar(
+                                      content: Text('Sync Error: $e'),
+                                      backgroundColor: Colors.red.shade700,
+                                    ),
+                                  );
+                                }
+                              },
+                        icon: syncState.isSyncing
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(Icons.sync_rounded, size: 18),
+                        label: Text(
+                          syncState.isSyncing
+                              ? (tr.isTaglish ? 'Nagsi-sync...' : 'Syncing...')
+                              : tr.syncNowButton,
+                          style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+
+                    // Disaster Recovery / Restore from Cloud Button
+                    Expanded(
+                      flex: 2,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(46),
+                          side: BorderSide(color: borderColor),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: syncState.isRestoring
+                            ? null
+                            : () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: Row(
+                                      children: [
+                                        const Icon(Icons.settings_backup_restore_rounded, color: AppColors.primary),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          tr.isTaglish ? 'Disaster Recovery' : 'Disaster Recovery',
+                                          style: GoogleFonts.outfit(fontWeight: FontWeight.w700),
+                                        ),
+                                      ],
+                                    ),
+                                    content: Text(
+                                      tr.isTaglish
+                                          ? 'I-restore ang buong tindahan mula sa Neon Cloud?\n\nBabawiin ang lahat ng produkto, utang, at mga talaan mula sa backup. Tamang-tama ito kung bago ang iyong cellphone o nag-log in ka sa laptop.'
+                                          : 'Restore entire store catalog and ledgers from Neon Cloud?\n\nThis will rehydrate your products, debts, and sales from the cloud backup. Ideal when logging in on a secondary device or replacement phone.',
+                                      style: GoogleFonts.inter(fontSize: 13),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(ctx).pop(false),
+                                        child: Text(tr.isTaglish ? 'Kanselahin' : 'Cancel'),
+                                      ),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.primary,
+                                        ),
+                                        onPressed: () => Navigator.of(ctx).pop(true),
+                                        child: Text(
+                                          tr.isTaglish ? 'I-restore Ngayon' : 'Restore Now',
+                                          style: GoogleFonts.outfit(fontWeight: FontWeight.w700),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+
+                                if (confirm == true && context.mounted) {
+                                  final scaffold = ScaffoldMessenger.of(context);
+                                  try {
+                                    final counts = await ref.read(syncProvider.notifier).restoreFromCloud();
+                                    scaffold.showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          tr.isTaglish
+                                              ? '✅ Naibalik mula sa cloud: ${counts["products"] ?? 0} paninda, ${counts["debts"] ?? 0} utang!'
+                                              : '✅ Successfully restored: ${counts["products"] ?? 0} products, ${counts["debts"] ?? 0} debts!',
+                                        ),
+                                        backgroundColor: AppColors.primary,
+                                      ),
+                                    );
+                                  } catch (e) {
+                                    scaffold.showSnackBar(
+                                      SnackBar(
+                                        content: Text('Disaster Recovery Error: $e'),
+                                        backgroundColor: Colors.red.shade700,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                        icon: syncState.isRestoring
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.settings_backup_restore_rounded, size: 16),
+                        label: Text(
+                          tr.isTaglish ? 'I-restore' : 'Restore',
+                          style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

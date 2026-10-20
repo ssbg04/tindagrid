@@ -46,6 +46,11 @@ dependencies:
   flutter_secure_storage: ^11.2.0
   local_auth: ^3.0.2
   http: ^1.6.0
+  connectivity_plus: ^7.3.2
+  mobile_scanner: ^7.4.2
+  vibration: ^3.2.1
+  audioplayers: ^6.8.1
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:

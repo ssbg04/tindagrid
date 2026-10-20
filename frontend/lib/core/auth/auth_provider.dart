@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../sync/sync_provider.dart';
 import 'auth_models.dart';
 import 'auth_service.dart';
 
@@ -53,6 +54,11 @@ class AuthNotifier extends Notifier<AuthState> {
     try {
       final newState = await _authService.login(phone: phone, pin: pin);
       state = newState;
+
+      // Automatically trigger sync/restore on new device login
+      try {
+        await ref.read(syncProvider.notifier).syncNow(isSilent: true);
+      } catch (_) {}
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
       rethrow;

@@ -57,7 +57,10 @@ model Product {
   costPrice    Float
   sellingPrice Float
   currentStock Int      @default(0)
+  unit         String?  @default("pcs")
   isTingi      Boolean  @default(false)
+  imageUrl     String?
+  isDeleted    Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -86,6 +89,7 @@ model Sale {
   estimatedTubo Float    @default(0)
   paymentMethod String   @default("CASH") // CASH, GCASH
   clientSaleId  String?  @unique // For idempotency during offline sync
+  items         Json?
   createdAt     DateTime @default(now())
 
   store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
@@ -95,16 +99,18 @@ model Sale {
 }
 
 model Debt {
-  id            String    @id @default(uuid())
-  storeId       String
-  customerName  String
-  customerPhone String?
-  totalAmount   Float
-  status        String    @default("UNPAID") // UNPAID, PARTIAL, PAID
-  dueDate       DateTime?
-  clientDebtId  String?   @unique
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id               String    @id @default(uuid())
+  storeId          String
+  customerName     String
+  customerPhone    String?
+  totalAmount      Float
+  remainingBalance Float?    @default(0)
+  status           String    @default("UNPAID") // UNPAID, PARTIAL, PAID
+  dueDate          DateTime?
+  notes            String?
+  clientDebtId     String?   @unique
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
 

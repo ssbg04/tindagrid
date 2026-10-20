@@ -3,15 +3,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'core/constants/app_colors.dart';
+import 'core/database/app_database.dart';
 import 'core/localization/language_provider.dart';
+import 'core/sync/sync_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/responsive_layout.dart';
 import 'core/theme/theme_provider.dart';
+import 'core/utils/feedback_helper.dart';
 import 'core/utils/web_storage_helper.dart';
 import 'features/debts/debts_screen.dart';
 import 'features/gcash/gcash_screen.dart';
 import 'features/inventory/inventory_screen.dart';
+import 'features/pos/scanner_screen.dart';
+import 'features/pos/companion_scanner_dialog.dart';
+import 'features/pos/webcam_scanner_dialog.dart';
 import 'features/settings/settings_screen.dart';
+import 'core/sync/companion_scanner_service.dart';
+import 'core/utils/barcode_keyboard_listener.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -149,6 +157,86 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
     CartItem(name: 'SkyFlakes Crackers', price: 9.0, quantity: 2),
   ];
 
+  // Hardware Scanner & Companion Services
+  late final BarcodeKeyboardListener _hardwareKeyboardListener;
+  final CompanionScannerService _companionService = CompanionScannerService();
+
+  // Instant Predictive Search & 2-Digit PLU State
+  final TextEditingController _searchController = TextEditingController();
+  List<Product> _predictiveSearchResults = [];
+  ({String name, double price})? _matchedPlu;
+
+  static const Map<String, ({String name, double price})> _pluShortcuts = {
+    '01': (name: 'Itlog (Fresh Egg)', price: 10.0),
+    '02': (name: 'Yelo (Tube Ice)', price: 5.0),
+    '03': (name: 'Kopiko 78 / Black 3in1', price: 14.0),
+    '04': (name: 'Lucky Me Pancit Canton', price: 18.0),
+    '05': (name: 'Bear Brand Fortified 33g', price: 15.0),
+    '06': (name: 'Datu Puti Vinegar Sachet', price: 6.0),
+    '07': (name: 'Silver Swan Soy Sauce', price: 6.0),
+    '08': (name: 'Alaska Evaporada 250ml', price: 32.0),
+    '09': (name: 'Lucky Me Beef / Chicken', price: 16.0),
+    '10': (name: 'Marlboro Red (1 stick)', price: 10.0),
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    // Start listening to USB/Wireless handheld barcode scanner guns
+    _hardwareKeyboardListener = BarcodeKeyboardListener(
+      onBarcodeScanned: (barcode) {
+        final tr = AppStrings(ref.read(languageProvider));
+        _handleBarcodeDetected(barcode, tr);
+      },
+    );
+    _hardwareKeyboardListener.start();
+
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _hardwareKeyboardListener.stop();
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() async {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _predictiveSearchResults = [];
+          _matchedPlu = null;
+        });
+      }
+      return;
+    }
+
+    // 1. Check for 2-digit PLU shortcut
+    if (query.length == 2 && _pluShortcuts.containsKey(query)) {
+      setState(() => _matchedPlu = _pluShortcuts[query]);
+    } else {
+      if (_matchedPlu != null) {
+        setState(() => _matchedPlu = null);
+      }
+    }
+
+    // 2. Query instant predictive search
+    if (query.length >= 2) {
+      final db = ref.read(databaseProvider);
+      final results = await db.searchProducts(query);
+      if (mounted) {
+        setState(() => _predictiveSearchResults = results);
+      }
+    } else {
+      if (_predictiveSearchResults.isNotEmpty) {
+        setState(() => _predictiveSearchResults = []);
+      }
+    }
+  }
+
   double get _totalPrice =>
       _cart.fold(0.0, (sum, item) => sum + (item.price * item.quantity));
 
@@ -164,6 +252,81 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
         _cart.add(CartItem(name: name, price: price, quantity: qty));
       }
     });
+  }
+
+  Future<void> _handleBarcodeDetected(String scannedCode, AppStrings tr) async {
+    final db = ref.read(databaseProvider);
+    final product = await db.getProductByBarcode(scannedCode);
+
+    if (product != null) {
+      _addTingiItem(product.name, product.sellingPrice, 1);
+      await FeedbackHelper.triggerSuccessFeedback();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              tr.isTaglish
+                  ? '✅ Naidagdag sa Kart: ${product.name} (₱${product.sellingPrice.toStringAsFixed(2)})'
+                  : '✅ Added to Cart: ${product.name} (₱${product.sellingPrice.toStringAsFixed(2)})',
+            ),
+            backgroundColor: AppColors.primary,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } else {
+      await FeedbackHelper.triggerFailureFeedback();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              tr.isTaglish
+                  ? '⚠️ Hindi pa nakarehistro ang barcode: $scannedCode'
+                  : '⚠️ Unregistered barcode: $scannedCode',
+            ),
+            backgroundColor: Colors.amber.shade900,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _openScanner(AppStrings tr) async {
+    if (kIsWeb) {
+      _openWebcamScanner(tr);
+      return;
+    }
+
+    final scannedCode = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+    );
+
+    if (scannedCode != null && mounted) {
+      await _handleBarcodeDetected(scannedCode, tr);
+    }
+  }
+
+  void _openCompanionScanner(AppStrings tr) {
+    showDialog(
+      context: context,
+      builder: (_) => CompanionScannerDialog(
+        service: _companionService,
+        isTaglish: tr.isTaglish,
+        onBarcodeReceived: (code) => _handleBarcodeDetected(code, tr),
+      ),
+    );
+  }
+
+  void _openWebcamScanner(AppStrings tr) {
+    showDialog(
+      context: context,
+      builder: (_) => WebcamScannerDialog(
+        isTaglish: tr.isTaglish,
+        onBarcodeScanned: (code) => _handleBarcodeDetected(code, tr),
+        onOpenCompanionMode: () => _openCompanionScanner(tr),
+      ),
+    );
   }
 
   void _showCheckoutDialog(AppStrings tr) {
@@ -361,6 +524,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
   Widget build(BuildContext context) {
     final tr = ref.watch(stringsProvider);
     final currentLang = ref.watch(languageProvider);
+    final syncState = ref.watch(syncProvider);
     final isLight = Theme.of(context).brightness == Brightness.light;
     final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
 
@@ -427,28 +591,81 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
           ),
           const SizedBox(width: 6),
 
-          // Soft Offline Status Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-            decoration: BoxDecoration(
-              color: isLight ? AppColors.primaryLight : AppColors.primaryDark.withAlpha(35),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.primary.withAlpha(50), width: 0.8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.check_circle_rounded, color: isLight ? AppColors.primary : AppColors.primaryDark, size: 13),
-                const SizedBox(width: 4),
-                Text(
-                  tr.offlineSafe,
-                  style: GoogleFonts.inter(
-                    color: isLight ? AppColors.primary : AppColors.primaryDark,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 10,
-                  ),
+          // Interactive Soft Cloud Sync Badge & Button
+          InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: syncState.isSyncing
+                ? null
+                : () async {
+                    final scaffold = ScaffoldMessenger.of(context);
+                    try {
+                      final success = await ref.read(syncProvider.notifier).syncNow();
+                      scaffold.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            success
+                                ? (tr.isTaglish ? '☁️ Naka-sync sa Neon Cloud!' : '☁️ Cloud Sync Complete!')
+                                : (tr.isTaglish ? 'Naka-offline. Ligtas ang lahat sa lokal SQLite.' : 'Offline. All data safely saved locally.'),
+                          ),
+                          backgroundColor: success ? AppColors.primary : Colors.amber.shade800,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    } catch (e) {
+                      scaffold.showSnackBar(
+                        SnackBar(
+                          content: Text('Sync Error: $e'),
+                          backgroundColor: Colors.red.shade700,
+                        ),
+                      );
+                    }
+                  },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+              decoration: BoxDecoration(
+                color: syncState.isSyncing
+                    ? AppColors.primaryLight.withValues(alpha: 0.5)
+                    : (syncState.pendingCount > 0
+                        ? Colors.amber.withValues(alpha: 0.2)
+                        : (isLight ? AppColors.primaryLight : AppColors.primaryDark.withAlpha(35))),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: syncState.pendingCount > 0
+                      ? Colors.amber.shade700.withValues(alpha: 0.5)
+                      : AppColors.primary.withAlpha(50),
+                  width: 0.8,
                 ),
-              ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (syncState.isSyncing)
+                    const SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(strokeWidth: 1.8, color: AppColors.primary),
+                    )
+                  else if (syncState.pendingCount > 0)
+                    Icon(Icons.cloud_upload_rounded, color: Colors.amber.shade900, size: 13)
+                  else
+                    Icon(Icons.cloud_done_rounded, color: isLight ? AppColors.primary : AppColors.primaryDark, size: 13),
+                  const SizedBox(width: 4),
+                  Text(
+                    syncState.isSyncing
+                        ? (tr.isTaglish ? 'Nagsi-sync...' : 'Syncing...')
+                        : (syncState.pendingCount > 0
+                            ? '${syncState.pendingCount} ${tr.isTaglish ? "bago" : "pending"}'
+                            : (tr.isTaglish ? 'Naka-sync' : 'Synced')),
+                    style: GoogleFonts.inter(
+                      color: syncState.pendingCount > 0
+                          ? Colors.amber.shade900
+                          : (isLight ? AppColors.primary : AppColors.primaryDark),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -472,6 +689,10 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildSearchBar(tr),
+          if (_matchedPlu != null || _predictiveSearchResults.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _buildPredictiveSuggestions(tr),
+          ],
           const SizedBox(height: 18),
           _buildTingiGridHeader(tr),
           const SizedBox(height: 12),
@@ -498,6 +719,10 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _buildSearchBar(tr),
+                if (_matchedPlu != null || _predictiveSearchResults.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _buildPredictiveSuggestions(tr),
+                ],
                 const SizedBox(height: 20),
                 _buildTingiGridHeader(tr),
                 const SizedBox(height: 14),
@@ -578,20 +803,204 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
   }
 
   Widget _buildSearchBar(AppStrings tr) {
+    final hasText = _searchController.text.isNotEmpty;
+
     return TextField(
+      controller: _searchController,
       decoration: InputDecoration(
-        hintText: tr.searchPlaceholder,
+        hintText: tr.isTaglish
+            ? 'Maghanap, i-scan, o mag-type ng 2-digit PLU (hal. 01)...'
+            : 'Search items, scan barcode, or type 2-digit PLU (e.g. 01)...',
         prefixIcon: const Icon(Icons.search_rounded, size: 22),
-        suffixIcon: IconButton(
-          icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary, size: 22),
-          onPressed: () {
+        suffixIcon: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (hasText)
+              IconButton(
+                icon: const Icon(Icons.clear_rounded, size: 18),
+                onPressed: () {
+                  _searchController.clear();
+                },
+              ),
+            IconButton(
+              icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary, size: 22),
+              tooltip: tr.isTaglish ? 'Camera / Webcam Scanner' : 'Camera / Webcam Scanner',
+              onPressed: () => _openScanner(tr),
+            ),
+            IconButton(
+              icon: const Icon(Icons.phonelink_ring_rounded, color: AppColors.primary, size: 20),
+              tooltip: tr.isTaglish ? 'I-pair ang Smartphone' : 'Pair Smartphone Scanner',
+              onPressed: () => _openCompanionScanner(tr),
+            ),
+            const SizedBox(width: 4),
+          ],
+        ),
+      ),
+      onSubmitted: (val) async {
+        final query = val.trim();
+        if (query.isEmpty) return;
+
+        if (_matchedPlu != null) {
+          _addTingiItem(_matchedPlu!.name, _matchedPlu!.price, 1);
+          await FeedbackHelper.triggerSuccessFeedback();
+          if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(tr.isTaglish ? '📷 Binubuksan ang scanner...' : '📷 Opening camera scanner...'),
+                content: Text(
+                  tr.isTaglish
+                      ? '⚡ PLU Shortcut: ${_matchedPlu!.name} (₱${_matchedPlu!.price.toStringAsFixed(2)})'
+                      : '⚡ PLU Shortcut: ${_matchedPlu!.name} (₱${_matchedPlu!.price.toStringAsFixed(2)})',
+                ),
+                backgroundColor: AppColors.primary,
+                duration: const Duration(seconds: 2),
               ),
             );
-          },
-        ),
+          }
+          _searchController.clear();
+        } else if (_predictiveSearchResults.isNotEmpty) {
+          final top = _predictiveSearchResults.first;
+          _addTingiItem(top.name, top.sellingPrice, 1);
+          await FeedbackHelper.triggerSuccessFeedback();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  tr.isTaglish
+                      ? '✅ Naidagdag: ${top.name} (₱${top.sellingPrice.toStringAsFixed(2)})'
+                      : '✅ Added: ${top.name} (₱${top.sellingPrice.toStringAsFixed(2)})',
+                ),
+                backgroundColor: AppColors.primary,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+          _searchController.clear();
+        } else {
+          await _handleBarcodeDetected(query, tr);
+          _searchController.clear();
+        }
+      },
+    );
+  }
+
+  Widget _buildPredictiveSuggestions(AppStrings tr) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. PLU Shortcut Highlight
+          if (_matchedPlu != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade100,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.bolt_rounded, color: Colors.amber, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '⚡ PLU ${_searchController.text}: ${_matchedPlu!.name} — ₱${_matchedPlu!.price.toStringAsFixed(2)}',
+                      style: GoogleFonts.outfit(
+                        color: Colors.brown.shade900,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  FilledButton.tonal(
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onPressed: () {
+                      _addTingiItem(_matchedPlu!.name, _matchedPlu!.price, 1);
+                      FeedbackHelper.triggerSuccessFeedback();
+                      _searchController.clear();
+                    },
+                    child: Text(tr.isTaglish ? '+ Idagdag (Enter)' : '+ Add (Enter)'),
+                  ),
+                ],
+              ),
+            ),
+            if (_predictiveSearchResults.isNotEmpty) const SizedBox(height: 8),
+          ],
+
+          // 2. Predictive Database Matches
+          if (_predictiveSearchResults.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 6),
+              child: Text(
+                tr.isTaglish ? 'Mungkahing Paninda (Hit Enter):' : 'Suggested Items (Hit Enter):',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ),
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _predictiveSearchResults.length > 3 ? 3 : _predictiveSearchResults.length,
+              separatorBuilder: (context, index) => const Divider(height: 1),
+              itemBuilder: (context, i) {
+                final p = _predictiveSearchResults[i];
+                return ListTile(
+                  dense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                  leading: const Icon(Icons.inventory_2_rounded, color: AppColors.primary, size: 20),
+                  title: Text(
+                    p.name,
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                  subtitle: Text(
+                    '${p.category} • Stock: ${p.currentStock.toInt()}',
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '₱${p.sellingPrice.toStringAsFixed(2)}',
+                        style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: AppColors.primary),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: 20),
+                        onPressed: () {
+                          _addTingiItem(p.name, p.sellingPrice, 1);
+                          FeedbackHelper.triggerSuccessFeedback();
+                          _searchController.clear();
+                        },
+                      ),
+                    ],
+                  ),
+                  onTap: () {
+                    _addTingiItem(p.name, p.sellingPrice, 1);
+                    FeedbackHelper.triggerSuccessFeedback();
+                    _searchController.clear();
+                  },
+                );
+              },
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -712,7 +1121,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _cart.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final item = _cart[index];
         return Container(

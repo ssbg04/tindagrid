@@ -20,7 +20,7 @@ void main() {
 
     // 1. Verify Brand name and default Taglish state on POS
     expect(find.text('TindaGrid'), findsOneWidget);
-    expect(find.text('Ligtas (Offline)'), findsOneWidget);
+    expect(find.text('Naka-sync'), findsOneWidget);
 
     // 2. Verify Android Navigation Bar destinations are present in Taglish
     expect(find.text('POS'), findsOneWidget);
@@ -48,7 +48,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify UI switched to English
-    expect(find.text('Safe (Offline)'), findsOneWidget);
+    expect(find.text('Synced'), findsOneWidget);
     expect(find.text('English'), findsOneWidget);
     expect(find.text('Inventory'), findsOneWidget);
     expect(find.text('Debts'), findsOneWidget);
@@ -87,7 +87,7 @@ void main() {
     await tester.tap(find.text('POS'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Ligtas (Offline)'), findsOneWidget);
+    expect(find.text('Naka-sync'), findsOneWidget);
     expect(find.text('MABILISANG TINGI (Walang Barcode — Pindutin Agad):'), findsOneWidget);
   });
 }
