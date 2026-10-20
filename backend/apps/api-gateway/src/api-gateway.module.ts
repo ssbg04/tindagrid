@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from '@lib/database';
-import { validateEnv } from '@lib/common';
+import { CommonModule, validateEnv } from '@lib/common';
 import { ApiGatewayController } from './api-gateway.controller.js';
 import { ApiGatewayService } from './api-gateway.service.js';
 import { SyncServiceModule } from '../../sync-service/src/sync-service.module.js';
@@ -17,12 +17,14 @@ import { AuthModule } from './auth/auth.module.js';
       validate: validateEnv,
     }),
     DatabaseModule,
+    CommonModule,
     AuthModule,
     SyncServiceModule,
     CatalogServiceModule,
     StorefrontServiceModule,
     B2bAnalyticsServiceModule,
   ],
+
   controllers: [ApiGatewayController],
   providers: [ApiGatewayService],
 })

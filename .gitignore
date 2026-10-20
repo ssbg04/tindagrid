@@ -44,6 +44,9 @@ Thumbs.db
 *.ipr
 *.iws
 
-# Documentation & Markdown files
-*.md
+# Compiled TS Libs
+backend/libs/**/*.js
+backend/libs/**/*.d.ts
+backend/libs/**/*.js.map
+
 
