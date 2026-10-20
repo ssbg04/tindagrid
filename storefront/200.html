@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="tl-PH">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TindaGrid — Web Storefront</title>
+  <meta name="description" content="Tingnan ang mga paninda, presyo, at lokasyon ng aming neighborhood sari-sari store." />
+  
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet OpenStreetMap CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Header -->
+    <header class="top-nav">
+      <div class="brand">
+        <span class="brand-badge">TindaGrid</span>
+        <span class="live-dot" id="live-indicator">● LIVE STORE</span>
+      </div>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle Dark/Light Mode">🌙</button>
+    </header>
+
+    <!-- Hero / Store Header Card -->
+    <main>
+      <section class="store-hero" id="store-hero">
+        <div class="store-cover-container">
+          <img id="store-photo" src="https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=1000" alt="Sari-Sari Store Front" class="store-cover" />
+          <div class="cover-gradient"></div>
+          <div class="verified-tag">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#00A86B"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            <span>Verified Neighborhood Store</span>
+          </div>
+        </div>
+
+        <div class="store-details">
+          <h1 id="store-name" class="store-name">Aling Nena's Sari-Sari Store</h1>
+          <p id="store-address" class="store-address">📍 Brgy 174, Caloocan City, Metro Manila</p>
+          <div class="store-meta">
+            <span class="meta-pill">🕒 Bukas: 6:00 AM – 10:00 PM</span>
+            <span class="meta-pill">💵 Cash & GCash Accepted</span>
+          </div>
+
+          <div class="cta-actions">
+            <a id="btn-call" href="tel:09171234567" class="btn btn-primary">
+              <span class="icon">📞</span> Tawagan ang Tindahan
+            </a>
+            <a id="btn-sms" href="sms:09171234567?body=Pabili%20po" class="btn btn-secondary">
+              <span class="icon">💬</span> Mag-text / Pabili
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Live Catalog Section -->
+      <section class="catalog-section">
+        <div class="catalog-header">
+          <h2>Mga Paninda (Live Catalog)</h2>
+          <span class="item-counter" id="item-counter">0 tinda</span>
+        </div>
+
+        <!-- Search Bar & Filters -->
+        <div class="search-filter-box">
+          <div class="search-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-input" placeholder="Maghanap ng paninda (e.g. kape, pancit, itlog)..." />
+          </div>
+          <div class="category-chips" id="category-chips">
+            <button class="chip active" data-cat="all">Lahat</button>
+            <button class="chip" data-cat="tingi">Tingi / Sachet</button>
+            <button class="chip" data-cat="kape">Kape & Gatas</button>
+            <button class="chip" data-cat="noodles">Noodles</button>
+            <button class="chip" data-cat="inumin">Inumin</button>
+          </div>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="product-grid" id="product-grid">
+          <!-- Products injected dynamically by app.js -->
+        </div>
+      </section>
+
+      <!-- Location & GPS Map Section -->
+      <section class="map-section">
+        <div class="map-header">
+          <h2>Lokasyon ng Tindahan</h2>
+          <p>Maaaring puntahan o bisitahin sa address sa ibaba</p>
+        </div>
+        <div id="map" class="map-container"></div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Powered by <strong>TindaGrid</strong> — The $0 Philippine Offline-First POS & Web Directory</p>
+      <p class="sub-footer">Serving neighborhood Sari-Sari Stores across the Philippines 🇵🇭</p>
+    </footer>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="app.js"></script>
+</body>
+</html>
