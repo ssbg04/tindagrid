@@ -49,4 +49,10 @@ backend/libs/**/*.js
 backend/libs/**/*.d.ts
 backend/libs/**/*.js.map
 
+# Private Project Documentation
+e_tindahan.md
+GUIDE.md
+ui_ux_design.md
+
+
 
