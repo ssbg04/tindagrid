@@ -275,13 +275,14 @@ class _TingiVisualGridState extends ConsumerState<TingiVisualGrid> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: displayItems.length + 1, // +1 for "Add Tingi" button
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 140,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
                 childAspectRatio: 0.95,
               ),
               itemBuilder: (context, index) {
+
                 // Last item is the "+ Dagdag Tingi" button
                 if (index == displayItems.length) {
                   return Container(

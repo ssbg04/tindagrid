@@ -53,14 +53,14 @@ class TindaGridApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      // Web is strictly POS counter terminal; Android/Mobile includes full navigation
-      home: kIsWeb ? const PosDashboardScreen() : const MainNavigationShell(),
+      // Full multi-screen navigation shell for both Web & Mobile
+      home: const MainNavigationShell(),
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// Main Navigation Shell for Android / Mobile (Soft UI & Minimalist)
+// Main Navigation Shell (Responsive: NavigationRail on Web/Desktop, NavigationBar on Mobile)
 // ---------------------------------------------------------------------------
 
 class MainNavigationShell extends ConsumerStatefulWidget {
@@ -86,7 +86,98 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
     final tr = ref.watch(stringsProvider);
     final isLight = Theme.of(context).brightness == Brightness.light;
     final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = screenWidth >= 850;
 
+    if (isDesktop) {
+      return Scaffold(
+        body: Row(
+          children: [
+            // Left Navigation Rail for Web / Desktop
+            NavigationRail(
+              backgroundColor: isLight ? AppColors.surfaceLight : AppColors.surfaceDark,
+              selectedIndex: _currentIndex,
+              onDestinationSelected: (index) {
+                setState(() => _currentIndex = index);
+              },
+              labelType: NavigationRailLabelType.all,
+              minWidth: 78,
+              leading: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.storefront_rounded, color: AppColors.primary, size: 24),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'TindaGrid',
+                      style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              destinations: [
+                NavigationRailDestination(
+                  icon: const Icon(Icons.point_of_sale_outlined),
+                  selectedIcon: const Icon(Icons.point_of_sale_rounded, color: AppColors.primary),
+                  label: Text(tr.navPos, style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w700)),
+                ),
+                NavigationRailDestination(
+                  icon: const Icon(Icons.inventory_2_outlined),
+                  selectedIcon: const Icon(Icons.inventory_2_rounded, color: AppColors.primary),
+                  label: Text(tr.navInventory, style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w700)),
+                ),
+                NavigationRailDestination(
+                  icon: const Icon(Icons.menu_book_outlined),
+                  selectedIcon: const Icon(Icons.menu_book_rounded, color: AppColors.primary),
+                  label: Text(tr.navDebts, style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w700)),
+                ),
+                NavigationRailDestination(
+                  icon: const Icon(Icons.payments_outlined),
+                  selectedIcon: const Icon(Icons.payments_rounded, color: AppColors.primary),
+                  label: Text(tr.navGcash, style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w700)),
+                ),
+                NavigationRailDestination(
+                  icon: const Icon(Icons.settings_outlined),
+                  selectedIcon: const Icon(Icons.settings_rounded, color: AppColors.primary),
+                  label: Text(tr.navSettings, style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w700)),
+                ),
+              ],
+              trailing: Expanded(
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: IconButton(
+                      onPressed: () => AssistantDrawer.show(context),
+                      icon: const Icon(Icons.auto_awesome_rounded, color: Colors.purple, size: 22),
+                      tooltip: 'TindaBot Offline AI',
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            VerticalDivider(width: 1, thickness: 1, color: borderColor),
+            // Active Screen Content
+            Expanded(
+              child: _screens[_currentIndex],
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Mobile View: Bottom Navigation Bar + FAB
     return Scaffold(
       body: _screens[_currentIndex],
       floatingActionButton: FloatingActionButton.small(
@@ -145,6 +236,7 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
     );
   }
 }
+
 
 // ---------------------------------------------------------------------------
 // POS Dashboard Screen (All-Ages Soft UI Counter Interface)
