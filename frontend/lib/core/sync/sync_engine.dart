@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import '../constants/api_constants.dart';
 import '../database/app_database.dart';
 
 class SyncEngine {
@@ -26,14 +27,7 @@ class SyncEngine {
   })  : _client = client ?? http.Client(),
         _storage = storage ?? const FlutterSecureStorage(),
         _connectivity = connectivity ?? Connectivity(),
-        baseUrl = baseUrl ?? _defaultBaseUrl();
-
-  static String _defaultBaseUrl() {
-    if (kReleaseMode || kIsWeb) {
-      return 'https://tindagrid-backend.onrender.com';
-    }
-    return 'http://localhost:3000';
-  }
+        baseUrl = baseUrl ?? ApiConstants.defaultBaseUrl;
 
   static const _keyAccessToken = 'tg_access_token';
   static const _keyLastSyncTimestamp = 'tg_last_sync_timestamp';

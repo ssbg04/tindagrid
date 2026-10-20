@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/auth/auth_provider.dart';
+import '../../core/constants/api_constants.dart';
 import 'storefront_service.dart';
 
 class StorefrontState {
@@ -28,7 +29,7 @@ class StorefrontState {
     this.errorMessage,
   });
 
-  String get publicUrl => 'https://tindagrid.com/$slug';
+  String get publicUrl => ApiConstants.storefrontUrl(slug);
 
   StorefrontState copyWith({
     String? storeId,

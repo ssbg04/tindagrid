@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:local_auth/local_auth.dart';
+import '../constants/api_constants.dart';
 import 'auth_models.dart';
 
 class AuthService {
@@ -19,16 +19,7 @@ class AuthService {
   })  : _client = client ?? http.Client(),
         _storage = storage ?? const FlutterSecureStorage(),
         _localAuth = localAuth ?? LocalAuthentication(),
-        baseUrl = baseUrl ?? _defaultBaseUrl();
-
-  static String _defaultBaseUrl() {
-    // If running in release or web, use the live Render backend
-    if (kReleaseMode || kIsWeb) {
-      return 'https://tindagrid-backend.onrender.com';
-    }
-    // For local Android development, 10.0.2.2 points to host machine, or localhost for Chrome
-    return 'http://localhost:3000';
-  }
+        baseUrl = baseUrl ?? ApiConstants.defaultBaseUrl;
 
   static const _keyAccessToken = 'tg_access_token';
   static const _keyRefreshToken = 'tg_refresh_token';

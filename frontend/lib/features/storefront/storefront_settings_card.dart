@@ -274,7 +274,7 @@ class _StorefrontSettingsCardState extends ConsumerState<StorefrontSettingsCard>
               ),
               subtitle: Text(
                 tr.isTaglish
-                    ? 'Kung naka-ON, makikita ng kapitbahay ang paninda mo sa tindagrid.com/${state.slug}'
+                    ? 'Kung naka-ON, makikita ng kapitbahay ang paninda mo sa tindagrid.us.ci/${state.slug}'
                     : 'Allows neighbors to view your in-stock goods online.',
                 style: GoogleFonts.inter(fontSize: 11),
               ),
@@ -417,7 +417,7 @@ class _StorefrontSettingsCardState extends ConsumerState<StorefrontSettingsCard>
               TextField(
                 controller: _slugController,
                 decoration: const InputDecoration(
-                  labelText: 'Web Link Slug (tindagrid.com/...)',
+                  labelText: 'Web Link Slug (tindagrid.us.ci/...)',
                   prefixIcon: Icon(Icons.link),
                   helperText: 'Letters, numbers, and dashes only',
                 ),

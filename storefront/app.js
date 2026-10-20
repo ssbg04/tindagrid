@@ -1,8 +1,8 @@
 // TindaGrid Public Web Storefront App (Cloudflare Pages)
 
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:3000'
-  : 'https://api.tindagrid.com'; // Production gateway
+const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? (window.location.port === '3000' ? 'http://localhost:3000' : 'https://api.tindagrid.us.ci')
+  : 'https://api.tindagrid.us.ci'; // Production gateway
 
 // Fallback demo data if backend is in offline/preview mode
 const DEMO_STORE = {

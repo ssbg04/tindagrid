@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../constants/api_constants.dart';
+
 class CatalogBarcodeResult {
   final bool found;
   final String barcode;
@@ -65,15 +67,8 @@ class CatalogClient {
   CatalogClient({
     String? baseUrl,
     http.Client? client,
-  })  : baseUrl = baseUrl ?? _defaultBaseUrl(),
+  })  : baseUrl = baseUrl ?? ApiConstants.defaultBaseUrl,
         _client = client ?? http.Client();
-
-  static String _defaultBaseUrl() {
-    if (kReleaseMode || kIsWeb) {
-      return 'https://tindagrid-backend.onrender.com';
-    }
-    return 'http://localhost:3000';
-  }
 
   /// Lookup barcode from master crowdsourced database with offline fallback
   Future<CatalogBarcodeResult> lookupBarcode(String barcode) async {

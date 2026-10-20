@@ -129,7 +129,7 @@ void main() {
       expect(state.name, 'Mang Tomas Store');
       expect(state.slug, 'mang-tomas---store-');
       expect(state.address, 'Brgy Holy Spirit, QC');
-      expect(state.publicUrl, 'https://tindagrid.com/mang-tomas---store-');
+      expect(state.publicUrl, 'https://tindagrid.us.ci/mang-tomas---store-');
     });
 
     test('8.2 GPS coordinate lock updates latitude and longitude', () async {

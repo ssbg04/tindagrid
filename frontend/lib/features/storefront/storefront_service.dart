@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import '../../core/constants/api_constants.dart';
 
 class StorefrontMetadata {
   final String id;
@@ -76,10 +77,11 @@ class StorefrontService {
   final ImagePicker _picker;
 
   StorefrontService({
-    this.baseUrl = 'http://localhost:3000',
+    String? baseUrl,
     http.Client? client,
     ImagePicker? picker,
-  })  : _client = client ?? http.Client(),
+  })  : baseUrl = baseUrl ?? ApiConstants.defaultBaseUrl,
+        _client = client ?? http.Client(),
         _picker = picker ?? ImagePicker();
 
   /// Captures storefront photo from device camera or gallery

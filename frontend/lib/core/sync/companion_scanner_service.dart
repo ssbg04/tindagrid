@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../constants/api_constants.dart';
 
 class CompanionSessionInfo {
   final String sessionId;
@@ -60,15 +61,8 @@ class CompanionScannerService {
   CompanionScannerService({
     String? baseUrl,
     http.Client? client,
-  })  : baseUrl = baseUrl ?? _defaultBaseUrl(),
+  })  : baseUrl = baseUrl ?? ApiConstants.defaultBaseUrl,
         _client = client ?? http.Client();
-
-  static String _defaultBaseUrl() {
-    if (kReleaseMode || kIsWeb) {
-      return 'https://tindagrid-backend.onrender.com';
-    }
-    return 'http://localhost:3000';
-  }
 
   /// Create a new session for pairing Web POS with a mobile phone
   Future<CompanionSessionInfo> createSession({String? storeId}) async {
