@@ -465,6 +465,70 @@ class AppDatabase extends _$AppDatabase {
         .watch();
   }
 
+  /// Watch payables due within a specific threshold (e.g. 48 hours for urgent banner alert)
+  Stream<List<Payable>> watchPayablesDueSoon({Duration threshold = const Duration(hours: 48)}) {
+    final now = DateTime.now();
+    final limit = now.add(threshold);
+    return (select(payables)
+          ..where((p) =>
+              (p.status.equals('UNPAID') | p.status.equals('PARTIALLY_PAID')) &
+              p.dueDate.isSmallerOrEqualValue(limit))
+          ..orderBy([(p) => OrderingTerm.asc(p.dueDate)]))
+        .watch();
+  }
+
+  /// Get itemized list for a customer debt
+  Future<List<DebtItem>> getDebtItems(String debtId) {
+    return (select(debtItems)..where((i) => i.debtId.equals(debtId))).get();
+  }
+
+  /// Record a new supplier/bodega payable (delivery van, wholesale agent)
+  Future<String> recordPayable({
+    required String supplierName,
+    String? contactNumber,
+    required double totalAmount,
+    required DateTime dueDate,
+    String? reminderNotes,
+  }) async {
+    final payableId = _uuid.v4();
+    final now = DateTime.now();
+
+    await transaction(() async {
+      await into(payables).insert(PayablesCompanion.insert(
+        id: payableId,
+        supplierName: supplierName,
+        contactNumber: Value(contactNumber),
+        totalAmount: totalAmount,
+        paidAmount: const Value(0.0),
+        dueDate: dueDate,
+        reminderNotes: Value(reminderNotes),
+        status: const Value('UNPAID'),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+      ));
+
+      await _enqueueSync(
+        entityTable: 'payables',
+        entityId: payableId,
+        operation: 'INSERT',
+        payload: {
+          'id': payableId,
+          'supplierName': supplierName,
+          'contactNumber': contactNumber,
+          'totalAmount': totalAmount,
+          'paidAmount': 0.0,
+          'dueDate': dueDate.toIso8601String(),
+          'reminderNotes': reminderNotes,
+          'status': 'UNPAID',
+          'createdAt': now.toIso8601String(),
+          'updatedAt': now.toIso8601String(),
+        },
+      );
+    });
+
+    return payableId;
+  }
+
   /// Record payment to bodega/supplier
   Future<void> paySupplier(String payableId, double amount) async {
     await transaction(() async {
