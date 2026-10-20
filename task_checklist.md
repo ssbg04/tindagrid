@@ -160,21 +160,22 @@ A phased, actionable roadmap for building the offline-first micro-ERP, POS, loca
 
 ## 🌐 Phase 8: Storefront Discovery & Cloudflare Pages Web Link
 
-- [ ] **8.1 Storefront Profile & Photo Upload**
-  - [ ] Flutter camera capture for physical storefront photo.
-  - [ ] Client-side WebP compression (max 200 KB) using `flutter_image_compress`.
-  - [ ] Direct S3 upload to Cloudflare R2 via pre-signed URL.
-- [ ] **8.2 Draft vs. Public Storefront Toggle**
-  - [ ] Store settings toggle controlling visibility in public directory.
-- [ ] **8.3 Public Storefront Web App (Cloudflare Pages)**
-  - [ ] Lightweight standalone web app (HTML/CSS/JS or simple Flutter Web / Svelte) deployed on Cloudflare Pages.
-  - [ ] Dynamic store page URL: `tindagrid.com/:store-slug`.
-  - [ ] Display verified photo, address, operating hours, GPS pin on Leaflet/OpenStreetMap, and live product catalog.
-- [ ] **8.4 Flutter Merchant Web PWA Build & Cloudflare Pages Deployment**
-  - [ ] Configure production build: `flutter build web --pwa-strategy offline-first --wasm`.
-  - [ ] Deploy PWA to Cloudflare Pages for `app.tindagrid.com`.
-  - [ ] Verify PWA installation prompt ("Install App" / "Add to Home Screen") on Chrome & Edge.
-  - [ ] Test complete offline functionality (disconnect internet and verify app loads & registers sales from Cache).
+- [x] **8.1 Storefront Profile & Photo Upload**
+  - [x] Flutter camera capture for physical storefront photo.
+  - [x] Client-side WebP compression (max 200 KB) using `flutter_image_compress`.
+  - [x] Direct S3 upload to Cloudflare R2 via pre-signed URL.
+- [x] **8.2 Draft vs. Public Storefront Toggle**
+  - [x] Store settings toggle controlling visibility in public directory.
+- [x] **8.3 Public Storefront Web App (Cloudflare Pages)**
+  - [x] Lightweight standalone web app (HTML/CSS/JS or simple Flutter Web / Svelte) deployed on Cloudflare Pages.
+  - [x] Dynamic store page URL: `tindagrid.com/:store-slug`.
+  - [x] Display verified photo, address, operating hours, GPS pin on Leaflet/OpenStreetMap, and live product catalog.
+- [x] **8.4 Flutter Merchant Web PWA Build & Cloudflare Pages Deployment**
+  - [x] Configure production build: `flutter build web --pwa-strategy offline-first --wasm`.
+  - [x] Deploy PWA to Cloudflare Pages for `app.tindagrid.com`.
+  - [x] Verify PWA installation prompt ("Install App" / "Add to Home Screen") on Chrome & Edge.
+  - [x] Test complete offline functionality (disconnect internet and verify app loads & registers sales from Cache).
+
 
 ---
 

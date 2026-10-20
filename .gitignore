@@ -28,8 +28,10 @@ frontend/coverage/
 frontend/android/app/debug
 frontend/android/app/profile
 frontend/android/app/release
+frontend/android/.kotlin/
 frontend/app.*.symbols
 frontend/app.*.map.json
+
 
 # Logs & Temp
 *.log

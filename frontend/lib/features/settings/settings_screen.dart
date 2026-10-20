@@ -6,6 +6,8 @@ import '../../core/localization/language_provider.dart';
 import '../../core/sync/sync_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
+import '../storefront/storefront_settings_card.dart';
+
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -523,7 +525,12 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
 
+          // Public Web Storefront Card (Cloudflare Pages)
+          const StorefrontSettingsCard(),
+          const SizedBox(height: 14),
+
           // Soft UI Security & PIN Card
+
           Container(
             decoration: SoftDecorations.card(context, radius: 16),
             child: Material(
