@@ -27,6 +27,12 @@ export class ApiGatewayController {
       status: dbStatus === 'connected' ? 'ok' : 'degraded',
       service: 'api-gateway',
       database: dbStatus,
+      services: {
+        sync: 'active (/sync)',
+        catalog: 'active (/catalog)',
+        storefront: 'active (/storefront)',
+        b2b: 'active (/b2b)',
+      },
       timestamp: new Date().toISOString(),
     };
   }

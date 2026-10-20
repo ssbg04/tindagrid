@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { SyncServiceService } from './sync-service.service.js';
 
-@Controller()
+@Controller('sync')
 export class SyncServiceController {
   constructor(private readonly syncServiceService: SyncServiceService) {}
 

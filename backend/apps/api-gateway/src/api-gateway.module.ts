@@ -4,6 +4,10 @@ import { DatabaseModule } from '@lib/database';
 import { validateEnv } from '@lib/common';
 import { ApiGatewayController } from './api-gateway.controller.js';
 import { ApiGatewayService } from './api-gateway.service.js';
+import { SyncServiceModule } from '../../sync-service/src/sync-service.module.js';
+import { CatalogServiceModule } from '../../catalog-service/src/catalog-service.module.js';
+import { StorefrontServiceModule } from '../../storefront-service/src/storefront-service.module.js';
+import { B2bAnalyticsServiceModule } from '../../b2b-analytics-service/src/b2b-analytics-service.module.js';
 
 @Module({
   imports: [
@@ -12,6 +16,10 @@ import { ApiGatewayService } from './api-gateway.service.js';
       validate: validateEnv,
     }),
     DatabaseModule,
+    SyncServiceModule,
+    CatalogServiceModule,
+    StorefrontServiceModule,
+    B2bAnalyticsServiceModule,
   ],
   controllers: [ApiGatewayController],
   providers: [ApiGatewayService],
