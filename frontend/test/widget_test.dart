@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tindagrid/main.dart';
 
 void main() {
-  testWidgets('TindaGrid navigation, flat theme, and bilingual test', (WidgetTester tester) async {
+  testWidgets('TindaGrid navigation, soft UI theme, and bilingual test', (WidgetTester tester) async {
     // Provide a standard phone screen size
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 2.0;

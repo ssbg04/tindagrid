@@ -9,38 +9,48 @@ class AppTheme {
     final baseTextTheme = Typography.material2021().black;
     final textTheme = GoogleFonts.interTextTheme(baseTextTheme).copyWith(
       displayLarge: GoogleFonts.outfit(
-        fontSize: 34,
-        fontWeight: FontWeight.bold,
+        fontSize: 36,
+        fontWeight: FontWeight.w800,
         color: AppColors.textPrimaryLight,
+        letterSpacing: -0.5,
       ),
       displayMedium: GoogleFonts.outfit(
-        fontSize: 26,
-        fontWeight: FontWeight.bold,
-        color: AppColors.textPrimaryLight,
-      ),
-      titleLarge: GoogleFonts.outfit(
-        fontSize: 20,
+        fontSize: 28,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimaryLight,
+        letterSpacing: -0.3,
+      ),
+      titleLarge: GoogleFonts.outfit(
+        fontSize: 21,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimaryLight,
+        letterSpacing: -0.2,
       ),
       titleMedium: GoogleFonts.outfit(
-        fontSize: 16,
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryLight,
+      ),
+      titleSmall: GoogleFonts.outfit(
+        fontSize: 14,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimaryLight,
       ),
       bodyLarge: GoogleFonts.inter(
         fontSize: 15,
-        fontWeight: FontWeight.normal,
+        fontWeight: FontWeight.w500,
         color: AppColors.textPrimaryLight,
+        height: 1.4,
       ),
       bodyMedium: GoogleFonts.inter(
         fontSize: 13,
-        fontWeight: FontWeight.normal,
+        fontWeight: FontWeight.w400,
         color: AppColors.textSecondaryLight,
+        height: 1.4,
       ),
       labelLarge: GoogleFonts.inter(
         fontSize: 15,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         color: Colors.white,
       ),
     );
@@ -59,71 +69,71 @@ class AppTheme {
         onSurface: AppColors.textPrimaryLight,
       ),
       textTheme: textTheme,
-      // Flat Card Styling (No Drop Shadows, 1px Border)
+      // Soft UI Card
       cardTheme: CardThemeData(
         color: AppColors.surfaceLight,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: AppColors.borderLight, width: 1.0),
         ),
       ),
-      // Flat Elevated Button (No Elevation / Shadows)
+      // Soft UI Tactile Elevated Button
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           elevation: 0,
-          shadowColor: Colors.transparent,
-          minimumSize: const Size.fromHeight(50),
-          textStyle: GoogleFonts.inter(
+          minimumSize: const Size.fromHeight(52),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          textStyle: GoogleFonts.outfit(
             fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.2,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(14),
           ),
         ),
       ),
-      // Flat Outlined Button
+      // Soft UI Outlined Button
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.textPrimaryLight,
           elevation: 0,
-          shadowColor: Colors.transparent,
           minimumSize: const Size.fromHeight(48),
-          side: const BorderSide(color: AppColors.borderLight, width: 1.0),
+          side: const BorderSide(color: AppColors.borderLight, width: 1.2),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: GoogleFonts.inter(
-            fontSize: 15,
+            fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
         ),
       ),
-      // Flat Input Fields
+      // Soft UI Pillowy Input Field
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        fillColor: AppColors.surfaceLight,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.borderLight, width: 1.0),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.borderLight, width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
         ),
       ),
-      // Flat AppBar (Zero Elevation & Scrolled Under Elevation)
+      // Soft Minimalist AppBar
       appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surfaceLight,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
@@ -132,10 +142,10 @@ class AppTheme {
           bottom: BorderSide(color: AppColors.borderLight, width: 1.0),
         ),
       ),
-      // Flat NavigationBar
+      // Soft Navigation Bar
       navigationBarTheme: NavigationBarThemeData(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surfaceLight,
         indicatorColor: AppColors.primaryLight,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
@@ -144,12 +154,12 @@ class AppTheme {
           return const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textSecondaryLight);
         }),
       ),
-      // Flat Bottom Sheet
+      // Soft Bottom Sheet
       bottomSheetTheme: const BottomSheetThemeData(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surfaceLight,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           side: BorderSide(color: AppColors.borderLight, width: 1.0),
         ),
       ),
@@ -165,38 +175,48 @@ class AppTheme {
     final baseTextTheme = Typography.material2021().white;
     final textTheme = GoogleFonts.interTextTheme(baseTextTheme).copyWith(
       displayLarge: GoogleFonts.outfit(
-        fontSize: 34,
-        fontWeight: FontWeight.bold,
+        fontSize: 36,
+        fontWeight: FontWeight.w800,
         color: AppColors.textPrimaryDark,
+        letterSpacing: -0.5,
       ),
       displayMedium: GoogleFonts.outfit(
-        fontSize: 26,
-        fontWeight: FontWeight.bold,
-        color: AppColors.textPrimaryDark,
-      ),
-      titleLarge: GoogleFonts.outfit(
-        fontSize: 20,
+        fontSize: 28,
         fontWeight: FontWeight.w700,
         color: AppColors.textPrimaryDark,
+        letterSpacing: -0.3,
+      ),
+      titleLarge: GoogleFonts.outfit(
+        fontSize: 21,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimaryDark,
+        letterSpacing: -0.2,
       ),
       titleMedium: GoogleFonts.outfit(
-        fontSize: 16,
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimaryDark,
+      ),
+      titleSmall: GoogleFonts.outfit(
+        fontSize: 14,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimaryDark,
       ),
       bodyLarge: GoogleFonts.inter(
         fontSize: 15,
-        fontWeight: FontWeight.normal,
+        fontWeight: FontWeight.w500,
         color: AppColors.textPrimaryDark,
+        height: 1.4,
       ),
       bodyMedium: GoogleFonts.inter(
         fontSize: 13,
-        fontWeight: FontWeight.normal,
+        fontWeight: FontWeight.w400,
         color: AppColors.textSecondaryDark,
+        height: 1.4,
       ),
       labelLarge: GoogleFonts.inter(
         fontSize: 15,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         color: Colors.black,
       ),
     );
@@ -215,69 +235,69 @@ class AppTheme {
         onSurface: AppColors.textPrimaryDark,
       ),
       textTheme: textTheme,
-      // Flat Card Styling (Zero Elevation, 1px Dark Border)
+      // Soft UI Card (Dark Mode)
       cardTheme: CardThemeData(
         color: AppColors.surfaceDark,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: AppColors.borderDark, width: 1.0),
         ),
       ),
-      // Flat Elevated Button (Zero Elevation / Shadow)
+      // Soft UI Tactile Elevated Button (Dark Mode)
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryDark,
           foregroundColor: Colors.black,
           elevation: 0,
-          shadowColor: Colors.transparent,
-          minimumSize: const Size.fromHeight(50),
-          textStyle: GoogleFonts.inter(
+          minimumSize: const Size.fromHeight(52),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          textStyle: GoogleFonts.outfit(
             fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.2,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(14),
           ),
         ),
       ),
-      // Flat Outlined Button
+      // Soft UI Outlined Button (Dark Mode)
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.textPrimaryDark,
           elevation: 0,
-          shadowColor: Colors.transparent,
           minimumSize: const Size.fromHeight(48),
-          side: const BorderSide(color: AppColors.borderDark, width: 1.0),
+          side: const BorderSide(color: AppColors.borderDark, width: 1.2),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: GoogleFonts.inter(
-            fontSize: 15,
+            fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
         ),
       ),
-      // Flat Input Fields
+      // Soft UI Pillowy Input Field (Dark Mode)
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceDark,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.borderDark, width: 1.0),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.borderDark, width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.primaryDark, width: 1.5),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.primaryDark, width: 1.8),
         ),
       ),
-      // Flat AppBar (Zero Elevation, Flat Bottom Border)
+      // Soft Minimalist AppBar (Dark Mode)
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.surfaceDark,
         elevation: 0,
@@ -288,7 +308,7 @@ class AppTheme {
           bottom: BorderSide(color: AppColors.borderDark, width: 1.0),
         ),
       ),
-      // Flat NavigationBar
+      // Soft Navigation Bar (Dark Mode)
       navigationBarTheme: NavigationBarThemeData(
         elevation: 0,
         backgroundColor: AppColors.surfaceDark,
@@ -300,12 +320,12 @@ class AppTheme {
           return const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textSecondaryDark);
         }),
       ),
-      // Flat Bottom Sheet
+      // Soft Bottom Sheet (Dark Mode)
       bottomSheetTheme: const BottomSheetThemeData(
         elevation: 0,
         backgroundColor: AppColors.surfaceDark,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           side: BorderSide(color: AppColors.borderDark, width: 1.0),
         ),
       ),
@@ -313,6 +333,45 @@ class AppTheme {
         color: AppColors.borderDark,
         thickness: 1.0,
         space: 1.0,
+      ),
+    );
+  }
+}
+
+/// Reusable Soft UI Decorator helper for ambient depth & pillowy touch targets
+class SoftDecorations {
+  SoftDecorations._();
+
+  static BoxDecoration card(
+    BuildContext context, {
+    Color? color,
+    Color? borderColor,
+    double radius = 16.0,
+  }) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    return BoxDecoration(
+      color: color ?? (isLight ? AppColors.surfaceLight : AppColors.surfaceDark),
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(
+        color: borderColor ?? (isLight ? AppColors.borderLight : AppColors.borderDark),
+        width: 1.0,
+      ),
+      boxShadow: isLight ? AppColors.softShadowLight : AppColors.softShadowDark,
+    );
+  }
+
+  static BoxDecoration pill(
+    BuildContext context, {
+    required Color color,
+    Color? borderColor,
+    double radius = 24.0,
+  }) {
+    return BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(
+        color: borderColor ?? Colors.transparent,
+        width: 1.0,
       ),
     );
   }

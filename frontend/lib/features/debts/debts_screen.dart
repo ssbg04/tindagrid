@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/localization/language_provider.dart';
+import '../../core/theme/app_theme.dart';
 
 class DebtsScreen extends ConsumerWidget {
   const DebtsScreen({super.key});
@@ -10,7 +12,6 @@ class DebtsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = ref.watch(stringsProvider);
     final isLight = Theme.of(context).brightness == Brightness.light;
-    final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
 
     final sampleDebts = [
       {'name': 'Aling Marites (Kapitbahay)', 'phone': '0917-123-4567', 'amount': 385.00, 'date': 'Oct 18, 2026', 'items': 'Bear Brand, Bigas 2kg, Itlog'},
@@ -25,7 +26,7 @@ class DebtsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(
           tr.debtsTitle,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 20),
         ),
         actions: [
           IconButton(
@@ -45,16 +46,17 @@ class DebtsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Total Collectibles Banner (Flat Card)
+          // Total Collectibles Banner (Soft UI Card with Ambient Depth)
           Container(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: isLight ? AppColors.warningLight : AppColors.surfaceDark,
-              borderRadius: BorderRadius.circular(12),
+              color: isLight ? AppColors.warningLight.withAlpha(220) : AppColors.surfaceDark,
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isLight ? AppColors.warning : AppColors.warningDark,
+                color: isLight ? AppColors.warning.withAlpha(120) : AppColors.warningDark.withAlpha(80),
                 width: 1.0,
               ),
+              boxShadow: isLight ? AppColors.softShadowLight : AppColors.softShadowDark,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,11 +66,11 @@ class DebtsScreen extends ConsumerWidget {
                   children: [
                     Text(
                       tr.totalCollectibles.toUpperCase(),
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         color: isLight ? AppColors.warning : AppColors.warningDark,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
                         fontSize: 12,
-                        letterSpacing: 1.0,
+                        letterSpacing: 0.8,
                       ),
                     ),
                     Icon(
@@ -81,16 +83,16 @@ class DebtsScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Text(
                   '₱ ${totalCollectibles.toStringAsFixed(2)}',
-                  style: TextStyle(
+                  style: GoogleFonts.outfit(
                     color: isLight ? AppColors.textPrimaryLight : AppColors.textPrimaryDark,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 30,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 32,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${sampleDebts.length} ${tr.activeDebtors}',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -101,111 +103,110 @@ class DebtsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
-          // Flat Search bar
+          // Soft Search bar
           TextField(
             decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search, color: AppColors.primary, size: 22),
+              prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary, size: 22),
               hintText: tr.isTaglish ? 'Hanapin ang pangalan ng may utang...' : 'Search customer name...',
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             ),
           ),
           const SizedBox(height: 16),
 
-          // Debt Customer Cards (Flat)
+          // Debt Customer Cards (Soft UI)
           ...sampleDebts.map((debt) {
-            return Card(
-              margin: const EdgeInsets.only(bottom: 10),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: borderColor, width: 1.0),
-              ),
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: SoftDecorations.card(context, radius: 14),
               child: Padding(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          debt['name'] as String,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
-                        Text(
-                          '₱ ${(debt['amount'] as double).toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: AppColors.alert,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
                     Text(
-                      '📞 ${debt['phone']} • ${debt['date']}',
-                      style: TextStyle(fontSize: 12, color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark),
+                      debt['name'] as String,
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15),
                     ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isLight ? AppColors.backgroundLight : Colors.black26,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: borderColor, width: 0.8),
+                    Text(
+                      '₱ ${(debt['amount'] as double).toStringAsFixed(2)}',
+                      style: GoogleFonts.outfit(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                        color: AppColors.alert,
                       ),
-                      child: Text(
-                        'Paninda: ${debt['items']}',
-                        style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(0, 36),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          ),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(tr.isTaglish ? 'Sisingilin si ${debt['name']}...' : 'Sending SMS reminder to ${debt['name']}...'),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.send_rounded, size: 14),
-                          label: Text(tr.isTaglish ? 'I-text Paalala' : 'Send Reminder', style: const TextStyle(fontSize: 12)),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size(0, 36),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          ),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(tr.isTaglish ? 'Naitalang bayad ang utang!' : 'Payment marked as settled!'),
-                                backgroundColor: AppColors.primary,
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.check, size: 14),
-                          label: Text(tr.settleDebt, style: const TextStyle(fontSize: 12)),
-                        ),
-                      ],
                     ),
                   ],
                 ),
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
+                const SizedBox(height: 4),
+                Text(
+                  '📞 ${debt['phone']} • ${debt['date']}',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: isLight ? AppColors.surfaceMutedLight : Colors.black26,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    'Paninda: ${debt['items']}',
+                    style: GoogleFonts.inter(fontSize: 12, fontStyle: FontStyle.italic),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 38),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(tr.isTaglish ? 'Sisingilin si ${debt['name']}...' : 'Sending SMS reminder to ${debt['name']}...'),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.send_rounded, size: 14),
+                      label: Text(tr.isTaglish ? 'I-text Paalala' : 'Send Reminder', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(0, 38),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(tr.isTaglish ? 'Naitalang bayad ang utang!' : 'Payment marked as settled!'),
+                            backgroundColor: AppColors.primary,
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.check_rounded, size: 14),
+                      label: Text(tr.settleDebt, style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      }),
+    ],
+  ),
+);
+}
 }
