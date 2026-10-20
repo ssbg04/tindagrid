@@ -26,6 +26,26 @@ part 'app_database.g.dart';
   GcashFeeConfig,
   SyncQueue,
 ])
+class DualFloatBalance {
+  final double gcashFloat;
+  final double cashDrawer;
+  final double totalFeesEarned;
+  final int totalTransactions;
+  final int cashInCount;
+  final int cashOutCount;
+  final int storePaymentCount;
+
+  const DualFloatBalance({
+    required this.gcashFloat,
+    required this.cashDrawer,
+    required this.totalFeesEarned,
+    required this.totalTransactions,
+    required this.cashInCount,
+    required this.cashOutCount,
+    required this.storePaymentCount,
+  });
+}
+
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
@@ -472,7 +492,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   // --------------------------------------------------------------------------
-  // GCASH LEDGER OPERATIONS
+  // GCASH LEDGER OPERATIONS & DUAL-FLOAT ENGINE
   // --------------------------------------------------------------------------
 
   /// Watch GCash transaction history
@@ -480,8 +500,18 @@ class AppDatabase extends _$AppDatabase {
     return (select(gcashLedger)..orderBy([(g) => OrderingTerm.desc(g.timestamp)])).watch();
   }
 
+  /// Check if a GCash reference number has already been logged (anti-fraud/scam check)
+  Future<bool> isReferenceNumberUsed(String refNo) async {
+    final clean = refNo.replaceAll(RegExp(r'\s+'), '').trim();
+    if (clean.isEmpty) return false;
+    final all = await select(gcashLedger).get();
+    return all.any((t) =>
+        t.referenceNumber != null &&
+        t.referenceNumber!.replaceAll(RegExp(r'\s+'), '').trim().toLowerCase() == clean.toLowerCase());
+  }
+
   /// Record GCash cash-in / cash-out with convenience fee
-  Future<void> recordGcash({
+  Future<String> recordGcash({
     required String transactionType,
     required double amount,
     required double feeCharged,
@@ -521,6 +551,204 @@ class AppDatabase extends _$AppDatabase {
           'timestamp': now.toIso8601String(),
           'notes': notes,
         },
+      );
+    });
+
+    return gcashId;
+  }
+
+  /// Alias for recordGcash to support flexible naming
+  Future<String> recordGcashEntry({
+    required String transactionType,
+    required double amount,
+    required double feeCharged,
+    String? referenceNumber,
+    String? customerName,
+    String? customerPhone,
+    String? notes,
+  }) => recordGcash(
+    transactionType: transactionType,
+    amount: amount,
+    feeCharged: feeCharged,
+    referenceNumber: referenceNumber,
+    customerName: customerName,
+    customerPhone: customerPhone,
+    notes: notes,
+  );
+
+  /// Watch customizable fee schedule brackets
+  Stream<List<GcashFeeBracket>> watchFeeBrackets() {
+    return (select(gcashFeeConfig)..orderBy([(b) => OrderingTerm.asc(b.minAmount)])).watch();
+  }
+
+  /// Get current fee brackets
+  Future<List<GcashFeeBracket>> getFeeBrackets() {
+    return (select(gcashFeeConfig)..orderBy([(b) => OrderingTerm.asc(b.minAmount)])).get();
+  }
+
+  /// Seed default Philippine sari-sari store fee schedule if empty
+  Future<void> seedDefaultFeeBrackets() async {
+    final existing = await select(gcashFeeConfig).get();
+    if (existing.isNotEmpty) return;
+
+    final defaultBrackets = [
+      GcashFeeConfigCompanion.insert(
+        id: _uuid.v4(),
+        minAmount: 1.0,
+        maxAmount: 500.0,
+        fixedFee: const Value(10.0),
+        percentageFee: const Value(0.0),
+      ),
+      GcashFeeConfigCompanion.insert(
+        id: _uuid.v4(),
+        minAmount: 501.0,
+        maxAmount: 1000.0,
+        fixedFee: const Value(15.0),
+        percentageFee: const Value(0.0),
+      ),
+      GcashFeeConfigCompanion.insert(
+        id: _uuid.v4(),
+        minAmount: 1001.0,
+        maxAmount: 1500.0,
+        fixedFee: const Value(20.0),
+        percentageFee: const Value(0.0),
+      ),
+      GcashFeeConfigCompanion.insert(
+        id: _uuid.v4(),
+        minAmount: 1501.0,
+        maxAmount: 2000.0,
+        fixedFee: const Value(25.0),
+        percentageFee: const Value(0.0),
+      ),
+      GcashFeeConfigCompanion.insert(
+        id: _uuid.v4(),
+        minAmount: 2001.0,
+        maxAmount: 3000.0,
+        fixedFee: const Value(35.0),
+        percentageFee: const Value(0.0),
+      ),
+      GcashFeeConfigCompanion.insert(
+        id: _uuid.v4(),
+        minAmount: 3001.0,
+        maxAmount: 5000.0,
+        fixedFee: const Value(50.0),
+        percentageFee: const Value(0.0),
+      ),
+      GcashFeeConfigCompanion.insert(
+        id: _uuid.v4(),
+        minAmount: 5001.0,
+        maxAmount: 10000.0,
+        fixedFee: const Value(0.0),
+        percentageFee: const Value(1.5),
+      ),
+      GcashFeeConfigCompanion.insert(
+        id: _uuid.v4(),
+        minAmount: 10001.0,
+        maxAmount: 50000.0,
+        fixedFee: const Value(0.0),
+        percentageFee: const Value(2.0),
+      ),
+    ];
+
+    for (final bracket in defaultBrackets) {
+      await into(gcashFeeConfig).insert(bracket);
+    }
+  }
+
+  /// Upsert a fee bracket with cloud sync queueing
+  Future<void> saveFeeBracket(GcashFeeConfigCompanion bracket) async {
+    await into(gcashFeeConfig).insertOnConflictUpdate(bracket);
+    await _enqueueSync(
+      entityTable: 'gcash_fee_config',
+      entityId: bracket.id.value,
+      operation: 'UPSERT',
+      payload: {
+        'id': bracket.id.value,
+        'minAmount': bracket.minAmount.value,
+        'maxAmount': bracket.maxAmount.value,
+        'fixedFee': bracket.fixedFee.present ? bracket.fixedFee.value : 0.0,
+        'percentageFee': bracket.percentageFee.present ? bracket.percentageFee.value : 0.0,
+      },
+    );
+  }
+
+  /// Delete a fee bracket with sync queueing
+  Future<void> deleteFeeBracket(String id) async {
+    await (delete(gcashFeeConfig)..where((b) => b.id.equals(id))).go();
+    await _enqueueSync(
+      entityTable: 'gcash_fee_config',
+      entityId: id,
+      operation: 'DELETE',
+      payload: {'id': id},
+    );
+  }
+
+  /// Calculate convenience fee for a given amount using active brackets
+  Future<double> calculateGcashFee(double amount) async {
+    final brackets = await getFeeBrackets();
+    for (final b in brackets) {
+      if (amount >= b.minAmount && amount <= b.maxAmount) {
+        if (b.percentageFee > 0) {
+          return (amount * (b.percentageFee / 100.0));
+        }
+        return b.fixedFee;
+      }
+    }
+    // Default fallback brackets if table is empty
+    if (amount <= 500) return 10.0;
+    if (amount <= 1000) return 15.0;
+    if (amount <= 1500) return 20.0;
+    if (amount <= 2000) return 25.0;
+    if (amount <= 3000) return 35.0;
+    if (amount <= 5000) return 50.0;
+    return (amount * 0.015);
+  }
+
+  /// Watch real-time dual-float balances (GCash E-Wallet vs Physical Cash Drawer)
+  Stream<DualFloatBalance> watchDualFloatBalance({
+    double baseCash = 5000.0,
+    double baseGcash = 10000.0,
+  }) {
+    return watchGcashTransactions().asyncMap((txList) async {
+      final cashSales = await (select(sales)..where((s) => s.paymentMethod.equals('CASH'))).get();
+
+      double gcash = baseGcash;
+      double cash = baseCash;
+      double fees = 0.0;
+      int cashIn = 0;
+      int cashOut = 0;
+      int storePay = 0;
+
+      for (final tx in txList) {
+        fees += tx.feeCharged;
+        if (tx.transactionType == 'CASH_IN') {
+          cashIn++;
+          gcash -= tx.amount; // Store sent GCash
+          cash += (tx.amount + tx.feeCharged); // Store received cash + fee
+        } else if (tx.transactionType == 'CASH_OUT') {
+          cashOut++;
+          gcash += tx.amount; // Store received GCash
+          cash -= (tx.amount - tx.feeCharged); // Cash given to customer minus fee
+        } else if (tx.transactionType == 'STORE_PAYMENT') {
+          storePay++;
+          gcash += tx.amount; // Direct store sale paid to GCash
+        } else if (tx.transactionType == 'FLOAT_ADJUSTMENT') {
+          gcash += tx.amount;
+        }
+      }
+
+      for (final s in cashSales) {
+        cash += s.totalAmount;
+      }
+
+      return DualFloatBalance(
+        gcashFloat: gcash,
+        cashDrawer: cash,
+        totalFeesEarned: fees,
+        totalTransactions: txList.length,
+        cashInCount: cashIn,
+        cashOutCount: cashOut,
+        storePaymentCount: storePay,
       );
     });
   }
