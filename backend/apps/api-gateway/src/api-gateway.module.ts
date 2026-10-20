@@ -8,6 +8,7 @@ import { SyncServiceModule } from '../../sync-service/src/sync-service.module.js
 import { CatalogServiceModule } from '../../catalog-service/src/catalog-service.module.js';
 import { StorefrontServiceModule } from '../../storefront-service/src/storefront-service.module.js';
 import { B2bAnalyticsServiceModule } from '../../b2b-analytics-service/src/b2b-analytics-service.module.js';
+import { AuthModule } from './auth/auth.module.js';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { B2bAnalyticsServiceModule } from '../../b2b-analytics-service/src/b2b-a
       validate: validateEnv,
     }),
     DatabaseModule,
+    AuthModule,
     SyncServiceModule,
     CatalogServiceModule,
     StorefrontServiceModule,
