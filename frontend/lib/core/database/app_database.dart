@@ -52,6 +52,14 @@ class AppDatabase extends _$AppDatabase {
         .watch();
   }
 
+  /// Watch unbarcoded or Tingi goods for the Quick-Tap Visual Grid
+  Stream<List<Product>> watchTingiProducts() {
+    return (select(products)
+          ..where((p) => (p.isTingi.equals(true) | p.barcode.isNull() | p.barcode.equals('')) & p.isDeleted.equals(false))
+          ..orderBy([(p) => OrderingTerm(expression: p.name)]))
+        .watch();
+  }
+
   /// Search product by barcode (exact match for handheld scanner)
   Future<Product?> getProductByBarcode(String barcode) {
     return (select(products)

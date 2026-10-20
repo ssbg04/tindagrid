@@ -18,8 +18,13 @@ import 'features/pos/scanner_screen.dart';
 import 'features/pos/companion_scanner_dialog.dart';
 import 'features/pos/webcam_scanner_dialog.dart';
 import 'features/settings/settings_screen.dart';
+import 'core/catalog/catalog_client.dart';
 import 'core/sync/companion_scanner_service.dart';
 import 'core/utils/barcode_keyboard_listener.dart';
+import 'features/inventory/quick_add_product_dialog.dart';
+import 'features/pos/tingi_visual_grid.dart';
+import 'package:drift/drift.dart' as drift;
+import 'package:uuid/uuid.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -151,15 +156,16 @@ class PosDashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
-  // Simple in-memory cart state for setup validation
+  // Simple in-memory cart state with real-time profit tracking
   final List<CartItem> _cart = [
-    CartItem(name: 'Coca-Cola Mismo 300ml', price: 20.0, quantity: 1),
-    CartItem(name: 'SkyFlakes Crackers', price: 9.0, quantity: 2),
+    CartItem(name: 'Coca-Cola Mismo 300ml', price: 20.0, costPrice: 16.0, quantity: 1),
+    CartItem(name: 'SkyFlakes Crackers', price: 9.0, costPrice: 7.0, quantity: 2),
   ];
 
   // Hardware Scanner & Companion Services
   late final BarcodeKeyboardListener _hardwareKeyboardListener;
   final CompanionScannerService _companionService = CompanionScannerService();
+  final CatalogClient _catalogClient = CatalogClient();
 
   // Instant Predictive Search & 2-Digit PLU State
   final TextEditingController _searchController = TextEditingController();
@@ -238,18 +244,33 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
   }
 
   double get _totalPrice =>
-      _cart.fold(0.0, (sum, item) => sum + (item.price * item.quantity));
+      _cart.fold(0.0, (sum, item) => sum + item.subtotal);
+
+  double get _totalProfit =>
+      _cart.fold(0.0, (sum, item) => sum + item.profit);
 
   int get _totalItems =>
       _cart.fold(0, (sum, item) => sum + item.quantity);
 
-  void _addTingiItem(String name, double price, int qty) {
+  void _addTingiItem(
+    String name,
+    double price,
+    int qty, {
+    String? productId,
+    double? costPrice,
+  }) {
     setState(() {
       final index = _cart.indexWhere((item) => item.name == name);
       if (index >= 0) {
         _cart[index].quantity += qty;
       } else {
-        _cart.add(CartItem(name: name, price: price, quantity: qty));
+        _cart.add(CartItem(
+          productId: productId,
+          name: name,
+          price: price,
+          costPrice: costPrice ?? (price * 0.8),
+          quantity: qty,
+        ));
       }
     });
   }
@@ -259,7 +280,13 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
     final product = await db.getProductByBarcode(scannedCode);
 
     if (product != null) {
-      _addTingiItem(product.name, product.sellingPrice, 1);
+      _addTingiItem(
+        product.name,
+        product.sellingPrice,
+        1,
+        productId: product.id,
+        costPrice: product.costPrice,
+      );
       await FeedbackHelper.triggerSuccessFeedback();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -275,17 +302,42 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
         );
       }
     } else {
+      // 1. Trigger warning feedback
       await FeedbackHelper.triggerFailureFeedback();
+
+      // 2. Query Crowdsourced NestJS / Master Philippine Catalog API
+      final catalogMatch = await _catalogClient.lookupBarcode(scannedCode);
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              tr.isTaglish
-                  ? '⚠️ Hindi pa nakarehistro ang barcode: $scannedCode'
-                  : '⚠️ Unregistered barcode: $scannedCode',
-            ),
-            backgroundColor: Colors.amber.shade900,
-            duration: const Duration(seconds: 3),
+        // 3. Auto-open "Quick-Add Product" Modal with pre-filled barcode & crowdsourced data
+        showDialog(
+          context: context,
+          builder: (_) => QuickAddProductDialog(
+            barcode: scannedCode,
+            initialMatch: catalogMatch,
+            isTaglish: tr.isTaglish,
+            onProductSaved: (newProduct) {
+              _addTingiItem(
+                newProduct.name,
+                newProduct.sellingPrice,
+                1,
+                productId: newProduct.id,
+                costPrice: newProduct.costPrice,
+              );
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      tr.isTaglish
+                          ? '🎉 Narehistro at naidagdag sa Kart: ${newProduct.name}'
+                          : '🎉 Registered & added to Cart: ${newProduct.name}',
+                    ),
+                    backgroundColor: AppColors.primary,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              }
+            },
           ),
         );
       }
@@ -330,7 +382,10 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
   }
 
   void _showCheckoutDialog(AppStrings tr) {
-    double tendered = 100.0;
+    double tendered = _totalPrice > 0 ? _totalPrice : 100.0;
+    String paymentMethod = 'CASH'; // 'CASH' or 'GCASH'
+    final gcashRefController = TextEditingController();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -356,6 +411,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // Header
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -372,120 +428,325 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      tr.totalPayable,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                        color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '₱ ${_totalPrice.toStringAsFixed(2)}',
-                      style: GoogleFonts.outfit(
-                        fontSize: 38,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Text(
-                      tr.cashTendered,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                        color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                    const SizedBox(height: 14),
+
+                    // Dual Payment Selector (Cash vs GCash)
+                    Row(
                       children: [
-                        _buildQuickBillChip(tr.exactBill, _totalPrice, tendered, (val) {
-                          setModalState(() => tendered = val);
-                        }),
-                        _buildQuickBillChip('₱50', 50.0, tendered, (val) {
-                          setModalState(() => tendered = val);
-                        }),
-                        _buildQuickBillChip('₱100', 100.0, tendered, (val) {
-                          setModalState(() => tendered = val);
-                        }),
-                        _buildQuickBillChip('₱200', 200.0, tendered, (val) {
-                          setModalState(() => tendered = val);
-                        }),
-                        _buildQuickBillChip('₱500', 500.0, tendered, (val) {
-                          setModalState(() => tendered = val);
-                        }),
-                        _buildQuickBillChip('₱1,000', 1000.0, tendered, (val) {
-                          setModalState(() => tendered = val);
-                        }),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => setModalState(() {
+                              paymentMethod = 'CASH';
+                            }),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: paymentMethod == 'CASH'
+                                    ? AppColors.primary
+                                    : Colors.grey.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.payments_rounded,
+                                    color: paymentMethod == 'CASH' ? Colors.white : Colors.grey.shade700,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '💵 Cash',
+                                    style: GoogleFonts.outfit(
+                                      fontWeight: FontWeight.w700,
+                                      color: paymentMethod == 'CASH' ? Colors.white : Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => setModalState(() {
+                              paymentMethod = 'GCASH';
+                              tendered = _totalPrice;
+                            }),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: paymentMethod == 'GCASH'
+                                    ? const Color(0xFF007DFE)
+                                    : Colors.grey.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.account_balance_wallet_rounded,
+                                    color: paymentMethod == 'GCASH' ? Colors.white : Colors.grey.shade700,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '📱 GCash',
+                                    style: GoogleFonts.outfit(
+                                      fontWeight: FontWeight.w700,
+                                      color: paymentMethod == 'GCASH' ? Colors.white : Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 20),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-                      decoration: BoxDecoration(
-                        color: sukli >= 0
-                            ? AppColors.primaryLight.withAlpha(200)
-                            : AppColors.alertLight.withAlpha(200),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: sukli >= 0
-                              ? AppColors.primary.withAlpha(120)
-                              : AppColors.alert.withAlpha(120),
-                          width: 1.0,
+                    const SizedBox(height: 16),
+
+                    // Total Payable and Estimated Profit
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              tr.totalPayable,
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                                color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark,
+                              ),
+                            ),
+                            Text(
+                              '₱ ${_totalPrice.toStringAsFixed(2)}',
+                              style: GoogleFonts.outfit(
+                                fontSize: 34,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '✨ Tubo: ₱${_totalProfit.toStringAsFixed(2)}',
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.green.shade800,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Cash Mode: Tendered Chips & Auto Change
+                    if (paymentMethod == 'CASH') ...[
+                      Text(
+                        tr.cashTendered,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                          color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark,
                         ),
                       ),
-                      child: Column(
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
-                          Text(
-                            sukli >= 0
-                                ? tr.customerChange
-                                : tr.insufficientCash,
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: sukli >= 0
-                                  ? AppColors.primary
-                                  : AppColors.alert,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '₱ ${sukli.abs().toStringAsFixed(2)}',
-                            style: GoogleFonts.outfit(
-                              fontSize: 38,
-                              fontWeight: FontWeight.w800,
-                              color: sukli >= 0
-                                  ? AppColors.primary
-                                  : AppColors.alert,
-                            ),
-                          ),
+                          _buildQuickBillChip(tr.exactBill, _totalPrice, tendered, (val) {
+                            setModalState(() => tendered = val);
+                          }),
+                          _buildQuickBillChip('₱50', 50.0, tendered, (val) {
+                            setModalState(() => tendered = val);
+                          }),
+                          _buildQuickBillChip('₱100', 100.0, tendered, (val) {
+                            setModalState(() => tendered = val);
+                          }),
+                          _buildQuickBillChip('₱200', 200.0, tendered, (val) {
+                            setModalState(() => tendered = val);
+                          }),
+                          _buildQuickBillChip('₱500', 500.0, tendered, (val) {
+                            setModalState(() => tendered = val);
+                          }),
+                          _buildQuickBillChip('₱1,000', 1000.0, tendered, (val) {
+                            setModalState(() => tendered = val);
+                          }),
                         ],
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: sukli >= 0
+                              ? AppColors.primaryLight.withAlpha(200)
+                              : AppColors.alertLight.withAlpha(200),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: sukli >= 0
+                                ? AppColors.primary.withAlpha(120)
+                                : AppColors.alert.withAlpha(120),
+                            width: 1.0,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              sukli >= 0
+                                  ? tr.customerChange
+                                  : tr.insufficientCash,
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: sukli >= 0
+                                    ? AppColors.primary
+                                    : AppColors.alert,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '₱ ${sukli.abs().toStringAsFixed(2)}',
+                              style: GoogleFonts.outfit(
+                                fontSize: 34,
+                                fontWeight: FontWeight.w800,
+                                color: sukli >= 0
+                                    ? AppColors.primary
+                                    : AppColors.alert,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else ...[
+                      // GCash Mode
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF007DFE).withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFF007DFE).withValues(alpha: 0.3)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.qr_code_2_rounded, color: Color(0xFF007DFE), size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  tr.isTaglish ? 'GCash E-Wallet Payment' : 'GCash E-Wallet Payment',
+                                  style: GoogleFonts.outfit(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                    color: const Color(0xFF007DFE),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              tr.isTaglish
+                                  ? 'I-scan ng customer ang Tindahan QR o i-send sa GCash. Eksaktong ₱${_totalPrice.toStringAsFixed(2)} ang papasok sa e-wallet.'
+                                  : 'Customer scans Store GCash QR. Exactly ₱${_totalPrice.toStringAsFixed(2)} arrives in e-wallet.',
+                              style: GoogleFonts.inter(fontSize: 12, color: Colors.grey.shade700),
+                            ),
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: gcashRefController,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                labelText: tr.isTaglish ? 'GCash Reference No. (Optional)' : 'GCash Reference No. (Optional)',
+                                hintText: 'hal. 1004 8492 1849',
+                                prefixIcon: const Icon(Icons.tag_rounded, size: 18),
+                                isDense: true,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
                     const SizedBox(height: 20),
+
+                    // Complete Sale Button with Atomic Persistence
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size.fromHeight(50),
+                        backgroundColor: paymentMethod == 'GCASH' ? const Color(0xFF007DFE) : AppColors.primary,
+                        foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
-                      onPressed: sukli < 0
+                      onPressed: (paymentMethod == 'CASH' && sukli < 0)
                           ? null
-                          : () {
-                              setState(() => _cart.clear());
-                              Navigator.pop(ctx);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(tr.saleRecorded),
-                                  backgroundColor: AppColors.primary,
-                                ),
+                          : () async {
+                              final db = ref.read(databaseProvider);
+                              final saleItems = _cart.map((item) {
+                                return SaleItemsCompanion(
+                                  id: drift.Value(const Uuid().v4()),
+                                  saleId: const drift.Value(''),
+                                  productId: drift.Value(item.productId ?? 'tingi-${item.name.hashCode}'),
+                                  productName: drift.Value(item.name),
+                                  quantity: drift.Value(item.quantity.toDouble()),
+                                  costPrice: drift.Value(item.costPrice),
+                                  unitPrice: drift.Value(item.price),
+                                  subtotal: drift.Value(item.subtotal),
+                                  profit: drift.Value(item.profit),
+                                );
+                              }).toList();
+
+                              final saleId = await db.recordSale(
+                                paymentMethod: paymentMethod,
+                                totalAmount: _totalPrice,
+                                amountReceived: paymentMethod == 'CASH' ? tendered : _totalPrice,
+                                sukliAmount: paymentMethod == 'CASH' ? sukli : 0.0,
+                                items: saleItems,
                               );
+
+                              if (paymentMethod == 'GCASH') {
+                                final refNo = gcashRefController.text.trim();
+                                await db.recordGcash(
+                                  transactionType: 'STORE_PAYMENT',
+                                  amount: _totalPrice,
+                                  feeCharged: 0.0,
+                                  referenceNumber: refNo.isEmpty ? null : refNo,
+                                  notes: 'POS Sale #$saleId',
+                                );
+                              }
+
+                              await FeedbackHelper.triggerSuccessFeedback();
+                              setState(() => _cart.clear());
+
+                              if (context.mounted) {
+                                Navigator.pop(ctx);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      tr.isTaglish
+                                          ? '✅ Benta naitala! Ligtas sa lokal database ($paymentMethod).'
+                                          : '✅ Sale recorded! Saved to local database ($paymentMethod).',
+                                    ),
+                                    backgroundColor: AppColors.primary,
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                              }
                             },
                       child: Text(tr.completeSale),
                     ),
@@ -694,9 +955,10 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
             _buildPredictiveSuggestions(tr),
           ],
           const SizedBox(height: 18),
-          _buildTingiGridHeader(tr),
-          const SizedBox(height: 12),
-          _buildTingiTiles(),
+          TingiVisualGrid(
+            isTaglish: tr.isTaglish,
+            onAddTingi: (name, price, qty) => _addTingiItem(name, price, qty),
+          ),
           const SizedBox(height: 22),
           _buildRecentCartList(tr),
         ],
@@ -724,9 +986,10 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                   _buildPredictiveSuggestions(tr),
                 ],
                 const SizedBox(height: 20),
-                _buildTingiGridHeader(tr),
-                const SizedBox(height: 14),
-                _buildTingiTiles(),
+                TingiVisualGrid(
+                  isTaglish: tr.isTaglish,
+                  onAddTingi: (name, price, qty) => _addTingiItem(name, price, qty),
+                ),
               ],
             ),
           ),
@@ -1005,90 +1268,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
     );
   }
 
-  Widget _buildTingiGridHeader(AppStrings tr) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Text(
-            tr.quickTingiTitle,
-            style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w700),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        Text(
-          '1-Tap Add',
-          style: GoogleFonts.inter(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 12),
-        ),
-      ],
-    );
-  }
 
-  Widget _buildTingiTiles() {
-    final items = [
-      {'emoji': '🥚', 'name': 'Itlog', 'price': 10.0},
-      {'emoji': '🧊', 'name': 'Yelo', 'price': 5.0},
-      {'emoji': '☕', 'name': 'Kopiko 78', 'price': 14.0},
-      {'emoji': '🍬', 'name': 'Kendi', 'price': 2.0},
-      {'emoji': '🍜', 'name': 'Pancit', 'price': 18.0},
-      {'emoji': '🚬', 'name': 'Yosi', 'price': 10.0},
-    ];
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: items.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.95,
-      ),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        final name = item['name'] as String;
-        final price = item['price'] as double;
-        final emoji = item['emoji'] as String;
-
-        return Container(
-          decoration: SoftDecorations.card(context, radius: 14),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(14),
-              onTap: () => _addTingiItem(name, price, 1),
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(emoji, style: const TextStyle(fontSize: 26)),
-                    const SizedBox(height: 4),
-                    Text(
-                      name,
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 12),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '₱ ${price.toStringAsFixed(0)}',
-                      style: GoogleFonts.outfit(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   Widget _buildRecentCartList(AppStrings tr) {
     return Column(
@@ -1227,13 +1407,20 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
 }
 
 class CartItem {
+  final String? productId;
   final String name;
   final double price;
+  final double costPrice;
   int quantity;
 
   CartItem({
+    this.productId,
     required this.name,
     required this.price,
+    this.costPrice = 0.0,
     required this.quantity,
   });
+
+  double get subtotal => price * quantity;
+  double get profit => (price - costPrice) * quantity;
 }

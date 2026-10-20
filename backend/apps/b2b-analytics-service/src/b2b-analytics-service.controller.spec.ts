@@ -3,7 +3,7 @@ import { B2bAnalyticsServiceController } from './b2b-analytics-service.controlle
 import { B2bAnalyticsServiceService } from './b2b-analytics-service.service.js';
 
 describe('B2bAnalyticsServiceController', () => {
-  let b2bAnalyticsServiceController: B2bAnalyticsServiceController;
+  let controller: B2bAnalyticsServiceController;
 
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
@@ -11,12 +11,19 @@ describe('B2bAnalyticsServiceController', () => {
       providers: [B2bAnalyticsServiceService],
     }).compile();
 
-    b2bAnalyticsServiceController = app.get<B2bAnalyticsServiceController>(B2bAnalyticsServiceController);
+    controller = app.get<B2bAnalyticsServiceController>(B2bAnalyticsServiceController);
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(b2bAnalyticsServiceController.getHello()).toBe('Hello World!');
+    it('should return service info', () => {
+      const info = controller.getInfo();
+      expect(info.service).toBe('b2b-analytics-service');
+      expect(info.status).toBe('online');
+    });
+
+    it('should return health status', () => {
+      const health = controller.getHealth();
+      expect(health.status).toBe('ok');
     });
   });
 });
