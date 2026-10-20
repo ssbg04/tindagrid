@@ -1,0 +1,72 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "resolvePackageJsonExports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "types": [
+      "vitest/globals",
+      "node"
+    ],
+    "paths": {
+      "@lib/common": [
+        "./libs/common/src/index.ts"
+      ],
+      "@lib/common/*": [
+        "./libs/common/src/*"
+      ],
+      "@lib/contracts": [
+        "./libs/contracts/src/index.ts"
+      ],
+      "@lib/contracts/*": [
+        "./libs/contracts/src/*"
+      ],
+      "@lib/database": [
+        "./libs/database/src/index.ts"
+      ],
+      "@lib/database/*": [
+        "./libs/database/src/*"
+      ]
+    }
+  },
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/api-gateway/tsconfig.app.json"
+    },
+    {
+      "path": "./apps/sync-service/tsconfig.app.json"
+    },
+    {
+      "path": "./apps/catalog-service/tsconfig.app.json"
+    },
+    {
+      "path": "./apps/storefront-service/tsconfig.app.json"
+    },
+    {
+      "path": "./apps/b2b-analytics-service/tsconfig.app.json"
+    },
+    {
+      "path": "./libs/common/tsconfig.lib.json"
+    },
+    {
+      "path": "./libs/database/tsconfig.lib.json"
+    },
+    {
+      "path": "./libs/contracts/tsconfig.lib.json"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "TindaGrid: All Devices (-d all)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "all",
+      "cwd": "${workspaceFolder}/frontend",
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "TindaGrid: Android (ADB Device)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "android",
+      "cwd": "${workspaceFolder}/frontend",
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "TindaGrid: Chrome (Web PWA)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome",
+      "cwd": "${workspaceFolder}/frontend",
+      "program": "lib/main.dart",
+      "args": ["--web-port", "3000"]
+    },
+    {
+      "name": "TindaGrid: Chrome (CanvasKit / Wasm)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome",
+      "cwd": "${workspaceFolder}/frontend",
+      "program": "lib/main.dart",
+      "args": ["--web-renderer", "canvaskit", "--web-port", "3000"]
+    },
+    {
+      "name": "TindaGrid: Edge (Web)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "edge",
+      "cwd": "${workspaceFolder}/frontend",
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "TindaGrid: Windows Desktop",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "windows",
+      "cwd": "${workspaceFolder}/frontend",
+      "program": "lib/main.dart"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "TindaGrid: Run All (Android + Chrome)",
+      "configurations": [
+        "TindaGrid: Android (ADB Device)",
+        "TindaGrid: Chrome (Web PWA)"
+      ],
+      "stopAll": true
+    }
+  ]
+}

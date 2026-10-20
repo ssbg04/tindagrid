@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "outDir": "../../dist/apps/catalog-service"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"],
+  "references": [
+    { "path": "../../libs/common/tsconfig.lib.json" },
+    { "path": "../../libs/database/tsconfig.lib.json" },
+    { "path": "../../libs/contracts/tsconfig.lib.json" }
+  ]
+}

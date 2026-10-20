@@ -1,0 +1,141 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Flutter Run: All Devices",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["run", "-d", "all"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter Run: Android (ADB)",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["run", "-d", "android"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter Run: Chrome (Web PWA)",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["run", "-d", "chrome"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter Run: Chrome (CanvasKit / Wasm)",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["run", "-d", "chrome", "--web-renderer", "canvaskit"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter Run: Edge (Web)",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["run", "-d", "edge"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter Run: Windows Desktop",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["run", "-d", "windows"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter Build: Release APK",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["build", "apk", "--release"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter Build: Web PWA (Wasm / Offline)",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["build", "web", "--pwa-strategy", "offline-first", "--wasm"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter: Analyze & Test",
+      "type": "shell",
+      "command": "flutter test",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter: Clean & Get Packages",
+      "type": "shell",
+      "command": "flutter clean && flutter pub get",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "NestJS: Start API Gateway (Dev)",
+      "type": "shell",
+      "command": "npm run start:dev",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "NestJS: Build All Microservices",
+      "type": "shell",
+      "command": "npm run build:all",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "Prisma: Generate Client",
+      "type": "shell",
+      "command": "npm run prisma:generate",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      }
+    },
+    {
+      "label": "Prisma: Open Studio",
+      "type": "shell",
+      "command": "npm run prisma:studio",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      }
+    }
+  ]
+}

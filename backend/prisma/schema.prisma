@@ -1,0 +1,135 @@
+// This is your Prisma schema file for TindaGrid Backend Monorepo.
+// Configured for Neon.tech Serverless PostgreSQL with PostGIS extensions.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Merchant {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  fullName  String
+  pinHash   String?
+  role      String   @default("MERCHANT") // MERCHANT, ADMIN, B2B_PARTNER
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stores Store[]
+
+  @@map("merchants")
+}
+
+model Store {
+  id          String   @id @default(uuid())
+  merchantId  String
+  name        String
+  slug        String   @unique
+  address     String?
+  latitude    Float?
+  longitude   Float?
+  photoUrl    String?
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  products Product[]
+  sales    Sale[]
+  debts    Debt[]
+
+  @@map("stores")
+}
+
+model Product {
+  id           String   @id @default(uuid())
+  storeId      String
+  barcode      String?
+  name         String
+  category     String?
+  costPrice    Float
+  sellingPrice Float
+  currentStock Int      @default(0)
+  isTingi      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, barcode])
+  @@map("products")
+}
+
+model GlobalBarcode {
+  barcode       String   @id
+  name          String
+  category      String?
+  defaultPrice  Float?
+  verifiedCount Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("global_barcodes")
+}
+
+model Sale {
+  id            String   @id @default(uuid())
+  storeId       String
+  totalAmount   Float
+  estimatedTubo Float    @default(0)
+  paymentMethod String   @default("CASH") // CASH, GCASH
+  clientSaleId  String?  @unique // For idempotency during offline sync
+  createdAt     DateTime @default(now())
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, createdAt])
+  @@map("sales")
+}
+
+model Debt {
+  id            String    @id @default(uuid())
+  storeId       String
+  customerName  String
+  customerPhone String?
+  totalAmount   Float
+  status        String    @default("UNPAID") // UNPAID, PARTIAL, PAID
+  dueDate       DateTime?
+  clientDebtId  String?   @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, status])
+  @@map("debts")
+}
+
+model GcashLedger {
+  id              String   @id @default(uuid())
+  storeId         String
+  type            String   // CASH_IN, CASH_OUT, PAYMENT
+  amount          Float
+  feeCharged      Float    @default(0)
+  referenceNumber String?
+  createdAt       DateTime @default(now())
+
+  @@index([storeId, referenceNumber])
+  @@map("gcash_ledger")
+}
+
+model B2bApiKey {
+  id          String   @id @default(uuid())
+  clientName  String
+  apiKeyHash  String   @unique
+  tier        String   @default("STANDARD") // STANDARD, ENTERPRISE
+  rateLimit   Int      @default(1000)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@map("b2b_api_keys")
+}

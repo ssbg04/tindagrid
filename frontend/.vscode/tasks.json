@@ -1,0 +1,77 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Flutter Run: All Devices",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["run", "-d", "all"],
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter Run: Android (ADB)",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["run", "-d", "android"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter Run: Chrome (Web PWA)",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["run", "-d", "chrome"],
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter Run: Chrome (CanvasKit / Wasm)",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["run", "-d", "chrome", "--web-renderer", "canvaskit"],
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter Run: Edge (Web)",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["run", "-d", "edge"],
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter Run: Windows Desktop",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["run", "-d", "windows"],
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter Build: Release APK",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["build", "apk", "--release"],
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter Build: Web PWA (Wasm / Offline)",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["build", "web", "--pwa-strategy", "offline-first", "--wasm"],
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter: Analyze & Test",
+      "type": "shell",
+      "command": "flutter test",
+      "problemMatcher": ["$dart-flutter"]
+    },
+    {
+      "label": "Flutter: Clean & Get Packages",
+      "type": "shell",
+      "command": "flutter clean && flutter pub get",
+      "problemMatcher": ["$dart-flutter"]
+    }
+  ]
+}
