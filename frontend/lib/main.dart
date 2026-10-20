@@ -86,84 +86,118 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
     final tr = ref.watch(stringsProvider);
     final isLight = Theme.of(context).brightness == Brightness.light;
     final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isDesktop = screenWidth >= 850;
+    final useRail = ResponsiveLayout.useNavigationRail(context);
+    final isShortScreen = ResponsiveLayout.isShortLandscape(context) || MediaQuery.of(context).size.height < 520;
 
-    if (isDesktop) {
+    if (useRail) {
       return Scaffold(
         body: Row(
           children: [
-            // Left Navigation Rail for Web / Desktop
+            // Left Navigation Rail for Web / Desktop / Landscape Phone & Tablet
             NavigationRail(
               backgroundColor: isLight ? AppColors.surfaceLight : AppColors.surfaceDark,
               selectedIndex: _currentIndex,
               onDestinationSelected: (index) {
                 setState(() => _currentIndex = index);
               },
-              labelType: NavigationRailLabelType.all,
-              minWidth: 78,
+              labelType: isShortScreen ? NavigationRailLabelType.none : NavigationRailLabelType.all,
+              minWidth: isShortScreen ? 60 : 78,
               leading: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(12),
+                padding: EdgeInsets.symmetric(vertical: isShortScreen ? 8 : 14),
+                child: isShortScreen
+                    ? Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.storefront_rounded, color: AppColors.primary, size: 20),
+                      )
+                    : Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryLight,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.storefront_rounded, color: AppColors.primary, size: 24),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'TindaGrid',
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
                       ),
-                      child: const Icon(Icons.storefront_rounded, color: AppColors.primary, size: 24),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'TindaGrid',
-                      style: GoogleFonts.outfit(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
-                ),
               ),
               destinations: [
                 NavigationRailDestination(
-                  icon: const Icon(Icons.point_of_sale_outlined),
-                  selectedIcon: const Icon(Icons.point_of_sale_rounded, color: AppColors.primary),
+                  icon: Tooltip(
+                    message: tr.navPos,
+                    child: const Icon(Icons.point_of_sale_outlined),
+                  ),
+                  selectedIcon: Tooltip(
+                    message: tr.navPos,
+                    child: const Icon(Icons.point_of_sale_rounded, color: AppColors.primary),
+                  ),
                   label: Text(tr.navPos, style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w700)),
                 ),
                 NavigationRailDestination(
-                  icon: const Icon(Icons.inventory_2_outlined),
-                  selectedIcon: const Icon(Icons.inventory_2_rounded, color: AppColors.primary),
+                  icon: Tooltip(
+                    message: tr.navInventory,
+                    child: const Icon(Icons.inventory_2_outlined),
+                  ),
+                  selectedIcon: Tooltip(
+                    message: tr.navInventory,
+                    child: const Icon(Icons.inventory_2_rounded, color: AppColors.primary),
+                  ),
                   label: Text(tr.navInventory, style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w700)),
                 ),
                 NavigationRailDestination(
-                  icon: const Icon(Icons.menu_book_outlined),
-                  selectedIcon: const Icon(Icons.menu_book_rounded, color: AppColors.primary),
+                  icon: Tooltip(
+                    message: tr.navDebts,
+                    child: const Icon(Icons.menu_book_outlined),
+                  ),
+                  selectedIcon: Tooltip(
+                    message: tr.navDebts,
+                    child: const Icon(Icons.menu_book_rounded, color: AppColors.primary),
+                  ),
                   label: Text(tr.navDebts, style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w700)),
                 ),
                 NavigationRailDestination(
-                  icon: const Icon(Icons.payments_outlined),
-                  selectedIcon: const Icon(Icons.payments_rounded, color: AppColors.primary),
+                  icon: Tooltip(
+                    message: tr.navGcash,
+                    child: const Icon(Icons.payments_outlined),
+                  ),
+                  selectedIcon: Tooltip(
+                    message: tr.navGcash,
+                    child: const Icon(Icons.payments_rounded, color: AppColors.primary),
+                  ),
                   label: Text(tr.navGcash, style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w700)),
                 ),
                 NavigationRailDestination(
-                  icon: const Icon(Icons.settings_outlined),
-                  selectedIcon: const Icon(Icons.settings_rounded, color: AppColors.primary),
+                  icon: Tooltip(
+                    message: tr.navSettings,
+                    child: const Icon(Icons.settings_outlined),
+                  ),
+                  selectedIcon: Tooltip(
+                    message: tr.navSettings,
+                    child: const Icon(Icons.settings_rounded, color: AppColors.primary),
+                  ),
                   label: Text(tr.navSettings, style: GoogleFonts.outfit(fontSize: 11, fontWeight: FontWeight.w700)),
                 ),
               ],
-              trailing: Expanded(
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: IconButton(
-                      onPressed: () => AssistantDrawer.show(context),
-                      icon: const Icon(Icons.auto_awesome_rounded, color: Colors.purple, size: 22),
-                      tooltip: 'TindaBot Offline AI',
-                    ),
-                  ),
+              trailing: Padding(
+                padding: EdgeInsets.symmetric(vertical: isShortScreen ? 6 : 14),
+                child: IconButton(
+                  onPressed: () => AssistantDrawer.show(context),
+                  icon: const Icon(Icons.auto_awesome_rounded, color: Colors.purple, size: 22),
+                  tooltip: 'TindaBot Offline AI',
                 ),
               ),
             ),
@@ -497,19 +531,26 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
             final isLight = Theme.of(context).brightness == Brightness.light;
             final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
 
-            return Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: isLight ? Colors.white : AppColors.surfaceDark,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                border: Border(top: BorderSide(color: borderColor, width: 1.0)),
-                boxShadow: isLight ? AppColors.softShadowLight : AppColors.softShadowDark,
-              ),
-              child: SafeArea(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+            final maxHeight = MediaQuery.of(context).size.height * 0.92;
+
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Container(
+                  constraints: BoxConstraints(maxHeight: maxHeight),
+                  padding: const EdgeInsets.all(22),
+                  decoration: BoxDecoration(
+                    color: isLight ? Colors.white : AppColors.surfaceDark,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    border: Border(top: BorderSide(color: borderColor, width: 1.0)),
+                    boxShadow: isLight ? AppColors.softShadowLight : AppColors.softShadowDark,
+                  ),
+                  child: SafeArea(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
                     // Header
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -852,7 +893,10 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                   ],
                 ),
               ),
-            );
+            ),
+          ),
+        ),
+      );
           },
         );
       },
@@ -888,13 +932,19 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
     final isLight = Theme.of(context).brightness == Brightness.light;
     final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
 
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
-        leading: const Icon(Icons.storefront_rounded, color: AppColors.primary, size: 24),
+        leadingWidth: 36,
+        leading: const Padding(
+          padding: EdgeInsets.only(left: 6),
+          child: Icon(Icons.storefront_rounded, color: AppColors.primary, size: 22),
+        ),
         title: Text(
           tr.appName,
-          style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 19, letterSpacing: -0.3),
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 18, letterSpacing: -0.3),
         ),
         actions: [
           // 1-Tap Theme Switcher Button (Soft Pill)
@@ -904,7 +954,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
               ref.read(themeModeProvider.notifier).toggleTheme();
             },
             child: Container(
-              padding: const EdgeInsets.all(7),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: isLight ? AppColors.surfaceMutedLight : AppColors.surfaceMutedDark,
                 borderRadius: BorderRadius.circular(10),
@@ -917,7 +967,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 5),
 
           // 1-Tap Language Switcher Button (Soft Pill)
           InkWell(
@@ -926,7 +976,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
               ref.read(languageProvider.notifier).toggleLanguage();
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
               decoration: BoxDecoration(
                 color: isLight ? AppColors.primaryLight : AppColors.primaryDark.withAlpha(35),
                 borderRadius: BorderRadius.circular(10),
@@ -949,7 +999,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 5),
 
           // Interactive Soft Cloud Sync Badge & Button
           InkWell(
@@ -981,7 +1031,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                     }
                   },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
               decoration: BoxDecoration(
                 color: syncState.isSyncing
                     ? AppColors.primaryLight.withValues(alpha: 0.5)
@@ -1028,14 +1078,14 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 5),
 
           // TindaBot Offline AI Assistant Button
           InkWell(
             borderRadius: BorderRadius.circular(10),
             onTap: () => AssistantDrawer.show(context),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
               decoration: BoxDecoration(
                 color: Colors.purple.withAlpha(25),
                 borderRadius: BorderRadius.circular(10),
@@ -1045,27 +1095,29 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.auto_awesome_rounded, color: Colors.purple, size: 14),
-                  const SizedBox(width: 4),
-                  Text(
-                    'AI Bot',
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11,
-                      color: Colors.purple.shade700,
+                  if (screenWidth >= 440) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      'AI Bot',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                        color: Colors.purple.shade700,
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
         ],
       ),
       body: ResponsiveLayout(
         mobile: _buildMobileLayout(tr, borderColor),
         desktop: _buildDesktopLayout(tr, borderColor),
       ),
-      bottomNavigationBar: ResponsiveLayout.isDesktop(context)
+      bottomNavigationBar: ResponsiveLayout.showTwoPaneStation(context)
           ? null
           : _buildMobileCartBottomBar(tr, borderColor),
     );
@@ -1090,107 +1142,142 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
           ),
           const SizedBox(height: 22),
           _buildRecentCartList(tr),
+          SizedBox(height: _cart.isEmpty ? 16 : 84),
         ],
       ),
     );
   }
 
-  // Desktop View (Split-Screen 2-Column POS Station with Soft UI)
+  // Desktop & Landscape 2-Column POS Station with Soft UI
   Widget _buildDesktopLayout(AppStrings tr, Color borderColor) {
     final isLight = Theme.of(context).brightness == Brightness.light;
 
-    return Row(
-      children: [
-        // Left Column (Catalog & Fast Tingi Grid)
-        Expanded(
-          flex: 6,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildSearchBar(tr),
-                if (_matchedPlu != null || _predictiveSearchResults.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  _buildPredictiveSuggestions(tr),
-                ],
-                const SizedBox(height: 20),
-                TingiVisualGrid(
-                  isTaglish: tr.isTaglish,
-                  onAddTingi: (name, price, qty) => _addTingiItem(name, price, qty),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isShort = constraints.maxHeight < 520;
+        final cartWidth = (constraints.maxWidth * 0.36).clamp(250.0, 350.0);
+        final contentPadding = isShort ? 12.0 : 20.0;
+        final cartPadding = isShort ? 12.0 : 18.0;
+
+        return Row(
+          children: [
+            // Left Column (Catalog & Fast Tingi Grid)
+            Expanded(
+              flex: 6,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(contentPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildSearchBar(tr),
+                    if (_matchedPlu != null || _predictiveSearchResults.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      _buildPredictiveSuggestions(tr),
+                    ],
+                    SizedBox(height: isShort ? 12 : 20),
+                    TingiVisualGrid(
+                      isTaglish: tr.isTaglish,
+                      onAddTingi: (name, price, qty) => _addTingiItem(name, price, qty),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ),
-        // Right Column (Sticky Soft Live Ticket & Checkout Panel)
-        Container(
-          width: 350,
-          decoration: BoxDecoration(
-            color: isLight ? AppColors.surfaceLight : AppColors.surfaceDark,
-            border: Border(
-              left: BorderSide(color: borderColor, width: 1.0),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: isLight ? const Color(0x060F172A) : const Color(0x1F000000),
-                blurRadius: 12,
-                offset: const Offset(-2, 0),
               ),
-            ],
-          ),
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      '🛒 ${tr.liveTicketTitle}',
-                      style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w700),
-                      overflow: TextOverflow.ellipsis,
-                    ),
+            ),
+            // Right Column (Sticky Soft Live Ticket & Checkout Panel)
+            Container(
+              width: cartWidth,
+              decoration: BoxDecoration(
+                color: isLight ? AppColors.surfaceLight : AppColors.surfaceDark,
+                border: Border(
+                  left: BorderSide(color: borderColor, width: 1.0),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isLight ? const Color(0x060F172A) : const Color(0x1F000000),
+                    blurRadius: 12,
+                    offset: const Offset(-2, 0),
                   ),
-                  Text('$_totalItems ${tr.itemsCountLabel}',
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500)),
                 ],
               ),
-              const SizedBox(height: 12),
-              Divider(color: borderColor, height: 1),
-              const SizedBox(height: 12),
-              Expanded(child: _buildCartItemsList(tr)),
-              const SizedBox(height: 12),
-              Divider(color: borderColor, height: 1),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              padding: EdgeInsets.all(cartPadding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('${tr.totalLabel}:', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700)),
-                  Flexible(
-                    child: Text(
-                      '₱ ${_totalPrice.toStringAsFixed(2)}',
-                      style: GoogleFonts.outfit(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 24,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '🛒 ${tr.liveTicketTitle}',
+                          style: GoogleFonts.outfit(
+                            fontSize: isShort ? 14 : 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      overflow: TextOverflow.ellipsis,
+                      Text(
+                        '$_totalItems ${tr.itemsCountLabel}',
+                        style: GoogleFonts.inter(
+                          fontSize: isShort ? 12 : 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: isShort ? 8 : 12),
+                  Divider(color: borderColor, height: 1),
+                  SizedBox(height: isShort ? 8 : 12),
+                  Expanded(
+                    child: _buildCartItemsList(tr, true),
+                  ),
+                  SizedBox(height: isShort ? 8 : 12),
+                  Divider(color: borderColor, height: 1),
+                  SizedBox(height: isShort ? 8 : 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${tr.totalLabel}:',
+                        style: GoogleFonts.inter(
+                          fontSize: isShort ? 13 : 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Flexible(
+                        child: Text(
+                          '₱ ${_totalPrice.toStringAsFixed(2)}',
+                          style: GoogleFonts.outfit(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w800,
+                            fontSize: isShort ? 20 : 24,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: isShort ? 10 : 16),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: isShort ? 10 : 14),
+                    ),
+                    onPressed: _cart.isEmpty ? null : () => _showCheckoutDialog(tr),
+                    icon: const Icon(Icons.point_of_sale_rounded, size: 20),
+                    label: Text(
+                      tr.checkoutButton,
+                      style: GoogleFonts.outfit(
+                        fontSize: isShort ? 13 : 14,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: _cart.isEmpty ? null : () => _showCheckoutDialog(tr),
-                icon: const Icon(Icons.point_of_sale_rounded, size: 20),
-                label: Text(tr.checkoutButton),
-              ),
-            ],
-          ),
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -1413,7 +1500,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
     );
   }
 
-  Widget _buildCartItemsList([AppStrings? tr]) {
+  Widget _buildCartItemsList([AppStrings? tr, bool isScrollable = false]) {
     if (_cart.isEmpty) {
       return Center(
         child: Padding(
@@ -1427,8 +1514,8 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
     }
 
     return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: !isScrollable,
+      physics: isScrollable ? const AlwaysScrollableScrollPhysics() : const NeverScrollableScrollPhysics(),
       itemCount: _cart.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, index) {

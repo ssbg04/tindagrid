@@ -74,114 +74,121 @@ class _GcashScreenState extends ConsumerState<GcashScreen> with SingleTickerProv
                 storePaymentCount: 0,
               );
 
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Column(
-                  children: [
-                    // Dual Balances (GCash vs Cash Box Drawer)
-                    Row(
+          final isShort = MediaQuery.of(context).size.height < 520;
+
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(16, isShort ? 6 : 12, 16, 0),
+                    child: Column(
                       children: [
-                        Expanded(
-                          child: _buildSoftBalanceCard(
-                            context,
-                            title: tr.ewalletFloat,
-                            amount: '₱ ${balance.gcashFloat.toStringAsFixed(2)}',
-                            subtitle: '${balance.cashInCount} Cash-In | ${balance.cashOutCount} Cash-Out',
-                            icon: Icons.account_balance_wallet_outlined,
-                            color: Colors.blue.shade600,
-                          ),
+                        // Dual Balances (GCash vs Cash Box Drawer)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildSoftBalanceCard(
+                                context,
+                                title: tr.ewalletFloat,
+                                amount: '₱ ${balance.gcashFloat.toStringAsFixed(2)}',
+                                subtitle: '${balance.cashInCount} Cash-In | ${balance.cashOutCount} Cash-Out',
+                                icon: Icons.account_balance_wallet_outlined,
+                                color: Colors.blue.shade600,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildSoftBalanceCard(
+                                context,
+                                title: tr.cashBoxDrawer,
+                                amount: '₱ ${balance.cashDrawer.toStringAsFixed(2)}',
+                                subtitle: '+₱${balance.totalFeesEarned.toStringAsFixed(2)} Fee Profit',
+                                icon: Icons.payments_outlined,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildSoftBalanceCard(
-                            context,
-                            title: tr.cashBoxDrawer,
-                            amount: '₱ ${balance.cashDrawer.toStringAsFixed(2)}',
-                            subtitle: '+₱${balance.totalFeesEarned.toStringAsFixed(2)} Fee Profit',
-                            icon: Icons.payments_outlined,
-                            color: AppColors.primary,
+                        SizedBox(height: isShort ? 6 : 12),
+
+                        // Quick Action Buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () => _showTransactionModal(context, db, tr, isCashIn: true),
+                                icon: const Icon(Icons.arrow_upward_rounded, size: 18),
+                                label: Text(
+                                  tr.cashInAction,
+                                  style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w700),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue.shade600,
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(vertical: isShort ? 8 : 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () => _showTransactionModal(context, db, tr, isCashIn: false),
+                                icon: const Icon(Icons.arrow_downward_rounded, size: 18),
+                                label: Text(
+                                  tr.cashOutAction,
+                                  style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w700),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(vertical: isShort ? 8 : 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: isShort ? 6 : 12),
+
+                        // Sub-Tabs Header
+                        Container(
+                          decoration: BoxDecoration(
+                            color: isLight ? Colors.grey.shade100 : Colors.grey.shade900,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: borderColor),
+                          ),
+                          child: TabBar(
+                            controller: _tabController,
+                            indicatorColor: AppColors.primary,
+                            labelColor: isLight ? AppColors.primary : Colors.white,
+                            unselectedLabelColor: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark,
+                            indicatorSize: TabBarIndicatorSize.tab,
+                            tabs: [
+                              Tab(text: tr.isTaglish ? 'Kwaderno (Ledger)' : 'Ledger History'),
+                              Tab(text: tr.feeSchedule),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                  ),
 
-                    // Quick Action Buttons
-                    Row(
+                  // Sub-Tabs Content
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
                       children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => _showTransactionModal(context, db, tr, isCashIn: true),
-                            icon: const Icon(Icons.arrow_upward_rounded, size: 18),
-                            label: Text(
-                              tr.cashInAction,
-                              style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w700),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue.shade600,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => _showTransactionModal(context, db, tr, isCashIn: false),
-                            icon: const Icon(Icons.arrow_downward_rounded, size: 18),
-                            label: Text(
-                              tr.cashOutAction,
-                              style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w700),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ),
+                        _buildLedgerList(db, tr, isLight),
+                        _buildFeeScheduleView(db, tr, isLight, borderColor),
                       ],
                     ),
-                    const SizedBox(height: 12),
-
-                    // Sub-Tabs Header
-                    Container(
-                      decoration: BoxDecoration(
-                        color: isLight ? Colors.grey.shade100 : Colors.grey.shade900,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: borderColor),
-                      ),
-                      child: TabBar(
-                        controller: _tabController,
-                        indicatorColor: AppColors.primary,
-                        labelColor: isLight ? AppColors.primary : Colors.white,
-                        unselectedLabelColor: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark,
-                        indicatorSize: TabBarIndicatorSize.tab,
-                        tabs: [
-                          Tab(text: tr.isTaglish ? 'Kwaderno (Ledger)' : 'Ledger History'),
-                          Tab(text: tr.feeSchedule),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-
-              // Sub-Tabs Content
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildLedgerList(db, tr, isLight),
-                    _buildFeeScheduleView(db, tr, isLight, borderColor),
-                  ],
-                ),
-              ),
-            ],
+            ),
           );
         },
       ),

@@ -94,10 +94,13 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> with SingleTickerProv
         final debtList = snapshot.data ?? [];
         final totalCollectibles = debtList.fold(0.0, (sum, d) => sum + d.remainingBalance);
 
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Collectibles Summary Card
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 900),
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // Collectibles Summary Card
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -190,8 +193,10 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> with SingleTickerProv
               )
             else
               ...debtList.map((debt) => _buildCustomerDebtCard(context, db, tr, debt, isLight, borderColor)),
-          ],
-        );
+            ],
+          ),
+        ),
+      );
       },
     );
   }
@@ -312,10 +317,13 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> with SingleTickerProv
           (sum, p) => sum + (p.totalAmount - p.paidAmount),
         );
 
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // 48-Hour Urgent Banner Alert
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 900),
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // 48-Hour Urgent Banner Alert
             StreamBuilder<List<Payable>>(
               stream: db.watchPayablesDueSoon(threshold: const Duration(hours: 48)),
               builder: (context, alertSnapshot) {
@@ -454,8 +462,10 @@ class _DebtsScreenState extends ConsumerState<DebtsScreen> with SingleTickerProv
               )
             else
               ...payablesList.map((payable) => _buildSupplierPayableCard(context, db, tr, payable, isLight, borderColor)),
-          ],
-        );
+            ],
+          ),
+        ),
+      );
       },
     );
   }

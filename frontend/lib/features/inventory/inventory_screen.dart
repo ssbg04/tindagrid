@@ -46,113 +46,118 @@ class InventoryScreen extends ConsumerWidget {
           const SizedBox(width: 8),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Soft Summary Cards
-          Row(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1000),
+          child: ListView(
+            padding: const EdgeInsets.all(16),
             children: [
-              Expanded(
-                child: _buildSoftSummaryCard(
-                  context,
-                  title: tr.totalProducts,
-                  value: '${sampleProducts.length}',
-                  icon: Icons.inventory_2_outlined,
-                  color: AppColors.primary,
+              // Soft Summary Cards
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildSoftSummaryCard(
+                      context,
+                      title: tr.totalProducts,
+                      value: '${sampleProducts.length}',
+                      icon: Icons.inventory_2_outlined,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildSoftSummaryCard(
+                      context,
+                      title: tr.lowStockWarning,
+                      value: '2',
+                      icon: Icons.warning_amber_rounded,
+                      color: AppColors.alert,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Soft Search bar
+              TextField(
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary, size: 22),
+                  hintText: tr.searchPlaceholder,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildSoftSummaryCard(
-                  context,
-                  title: tr.lowStockWarning,
-                  value: '2',
-                  icon: Icons.warning_amber_rounded,
-                  color: AppColors.alert,
-                ),
-              ),
+              const SizedBox(height: 16),
+
+              // Product List (Soft UI Cards)
+              ...sampleProducts.map((p) {
+                final int stock = p['stock'] as int;
+                final isLow = stock <= 6;
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: SoftDecorations.card(context, radius: 14),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      leading: CircleAvatar(
+                        radius: 19,
+                        backgroundColor: isLow ? AppColors.alertLight : AppColors.primaryLight,
+                        child: Icon(
+                          Icons.shopping_bag_outlined,
+                          color: isLow ? AppColors.alert : AppColors.primary,
+                          size: 19,
+                        ),
+                      ),
+                      title: Text(
+                        p['name'] as String,
+                        style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+                      ),
+                      subtitle: Text(
+                        '${p['barcode']} • ${tr.costPrice}: ₱${(p['cost'] as double).toStringAsFixed(2)}',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark,
+                        ),
+                      ),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '₱${(p['price'] as double).toStringAsFixed(2)}',
+                            style: GoogleFonts.outfit(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: isLow
+                                  ? AppColors.alertLight
+                                  : (isLight ? AppColors.surfaceMutedLight : Colors.white10),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '$stock ${tr.inStock}',
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: isLow ? AppColors.alert : null,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
             ],
           ),
-          const SizedBox(height: 16),
-
-          // Soft Search bar
-          TextField(
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary, size: 22),
-              hintText: tr.searchPlaceholder,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Product List (Soft UI Cards)
-          ...sampleProducts.map((p) {
-            final int stock = p['stock'] as int;
-            final isLow = stock <= 6;
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              decoration: SoftDecorations.card(context, radius: 14),
-              child: Material(
-                color: Colors.transparent,
-                child: ListTile(
-                  dense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  leading: CircleAvatar(
-                    radius: 19,
-                    backgroundColor: isLow ? AppColors.alertLight : AppColors.primaryLight,
-                    child: Icon(
-                      Icons.shopping_bag_outlined,
-                      color: isLow ? AppColors.alert : AppColors.primary,
-                      size: 19,
-                    ),
-                  ),
-                  title: Text(
-                    p['name'] as String,
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
-                  ),
-                  subtitle: Text(
-                    '${p['barcode']} • ${tr.costPrice}: ₱${(p['cost'] as double).toStringAsFixed(2)}',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark,
-                    ),
-                  ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '₱${(p['price'] as double).toStringAsFixed(2)}',
-                        style: GoogleFonts.outfit(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: isLow
-                              ? AppColors.alertLight
-                              : (isLight ? AppColors.surfaceMutedLight : Colors.white10),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '$stock ${tr.inStock}',
-                          style: GoogleFonts.inter(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: isLow ? AppColors.alert : null,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }),
-        ],
+        ),
       ),
     );
   }

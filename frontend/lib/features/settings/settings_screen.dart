@@ -28,10 +28,13 @@ class SettingsScreen extends ConsumerWidget {
           style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 20),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Soft UI Theme Switcher Section (Light / Dark / System)
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 900),
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // Soft UI Theme Switcher Section (Light / Dark / System)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: SoftDecorations.card(context, radius: 16),
@@ -605,6 +608,8 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ],
       ),
-    );
+    ),
+  ),
+);
   }
 }

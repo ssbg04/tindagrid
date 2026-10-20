@@ -120,15 +120,20 @@ class _AssistantDrawerState extends ConsumerState<AssistantDrawer> {
     final isLight = Theme.of(context).brightness == Brightness.light;
     final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      decoration: BoxDecoration(
-        color: isLight ? Colors.white : AppColors.surfaceDark,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: isLight ? AppColors.softShadowLight : AppColors.softShadowDark,
-      ),
-      child: SafeArea(
+    final isShort = MediaQuery.of(context).size.height < 520;
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 640),
+        child: Container(
+          height: MediaQuery.of(context).size.height * (isShort ? 0.95 : 0.85),
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          decoration: BoxDecoration(
+            color: isLight ? Colors.white : AppColors.surfaceDark,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: isLight ? AppColors.softShadowLight : AppColors.softShadowDark,
+          ),
+          child: SafeArea(
         child: Column(
           children: [
             // Handle Bar & Header
@@ -281,8 +286,10 @@ class _AssistantDrawerState extends ConsumerState<AssistantDrawer> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   Widget _buildMessageBubble(BuildContext context, ChatMessage msg, bool isLight, Color borderColor) {
     if (msg.isUser) {

@@ -271,15 +271,18 @@ class _TingiVisualGridState extends ConsumerState<TingiVisualGrid> {
               displayItems.addAll(_defaultTingiItems);
             }
 
+            final isShortLandscape = MediaQuery.of(context).orientation == Orientation.landscape &&
+                MediaQuery.of(context).size.height < 520;
+
             return GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: displayItems.length + 1, // +1 for "Add Tingi" button
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 140,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 0.95,
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: isShortLandscape ? 130 : 140,
+                crossAxisSpacing: isShortLandscape ? 8 : 10,
+                mainAxisSpacing: isShortLandscape ? 8 : 10,
+                childAspectRatio: isShortLandscape ? 1.05 : 0.95,
               ),
               itemBuilder: (context, index) {
 
@@ -302,12 +305,12 @@ class _TingiVisualGridState extends ConsumerState<TingiVisualGrid> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: 28),
-                            const SizedBox(height: 6),
+                            Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: isShortLandscape ? 24 : 28),
+                            SizedBox(height: isShortLandscape ? 4 : 6),
                             Text(
                               tr ? '+ Tingi' : '+ Custom',
                               style: GoogleFonts.outfit(
-                                fontSize: 12,
+                                fontSize: isShortLandscape ? 11 : 12,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primary,
                               ),
@@ -332,15 +335,15 @@ class _TingiVisualGridState extends ConsumerState<TingiVisualGrid> {
                         FeedbackHelper.triggerSuccessFeedback();
                       },
                       child: Padding(
-                        padding: const EdgeInsets.all(8),
+                        padding: EdgeInsets.all(isShortLandscape ? 6 : 8),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(item.emoji, style: const TextStyle(fontSize: 26)),
+                            Text(item.emoji, style: TextStyle(fontSize: isShortLandscape ? 22 : 26)),
                             const SizedBox(height: 4),
                             Text(
                               item.name,
-                              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 12),
+                              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: isShortLandscape ? 11 : 12),
                               textAlign: TextAlign.center,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -351,7 +354,7 @@ class _TingiVisualGridState extends ConsumerState<TingiVisualGrid> {
                               style: GoogleFonts.outfit(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w800,
-                                fontSize: 13,
+                                fontSize: isShortLandscape ? 12 : 13,
                               ),
                             ),
                           ],
