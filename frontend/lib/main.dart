@@ -5,6 +5,7 @@ import 'core/constants/app_colors.dart';
 import 'core/localization/language_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/responsive_layout.dart';
+import 'core/theme/theme_provider.dart';
 import 'core/utils/web_storage_helper.dart';
 import 'features/debts/debts_screen.dart';
 import 'features/gcash/gcash_screen.dart';
@@ -24,17 +25,19 @@ void main() async {
   );
 }
 
-class TindaGridApp extends StatelessWidget {
+class TindaGridApp extends ConsumerWidget {
   const TindaGridApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+
     return MaterialApp(
       title: 'TindaGrid',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
       // Web is strictly POS counter terminal; Android/Mobile includes full navigation
       home: kIsWeb ? const PosDashboardScreen() : const MainNavigationShell(),
     );
@@ -42,7 +45,7 @@ class TindaGridApp extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Main Navigation Shell for Android / Mobile
+// Main Navigation Shell for Android / Mobile (Flat Styling)
 // ---------------------------------------------------------------------------
 
 class MainNavigationShell extends ConsumerStatefulWidget {
@@ -66,48 +69,56 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
   @override
   Widget build(BuildContext context) {
     final tr = ref.watch(stringsProvider);
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
 
     return Scaffold(
       body: _screens[_currentIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() => _currentIndex = index);
-        },
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.point_of_sale_outlined),
-            selectedIcon: const Icon(Icons.point_of_sale_rounded, color: AppColors.primary),
-            label: tr.navPos,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.inventory_2_outlined),
-            selectedIcon: const Icon(Icons.inventory_2_rounded, color: AppColors.primary),
-            label: tr.navInventory,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.menu_book_outlined),
-            selectedIcon: const Icon(Icons.menu_book_rounded, color: AppColors.primary),
-            label: tr.navDebts,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.payments_outlined),
-            selectedIcon: const Icon(Icons.payments_rounded, color: AppColors.primary),
-            label: tr.navGcash,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            selectedIcon: const Icon(Icons.settings_rounded, color: AppColors.primary),
-            label: tr.navSettings,
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: borderColor, width: 1.0)),
+        ),
+        child: NavigationBar(
+          elevation: 0,
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (index) {
+            setState(() => _currentIndex = index);
+          },
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.point_of_sale_outlined),
+              selectedIcon: const Icon(Icons.point_of_sale_rounded, color: AppColors.primary),
+              label: tr.navPos,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.inventory_2_outlined),
+              selectedIcon: const Icon(Icons.inventory_2_rounded, color: AppColors.primary),
+              label: tr.navInventory,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.menu_book_outlined),
+              selectedIcon: const Icon(Icons.menu_book_rounded, color: AppColors.primary),
+              label: tr.navDebts,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.payments_outlined),
+              selectedIcon: const Icon(Icons.payments_rounded, color: AppColors.primary),
+              label: tr.navGcash,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.settings_outlined),
+              selectedIcon: const Icon(Icons.settings_rounded, color: AppColors.primary),
+              label: tr.navSettings,
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// POS Dashboard Screen (All-Ages Touch-Driven Counter Interface)
+// POS Dashboard Screen (All-Ages Touch-Driven Flat Counter Interface)
 // ---------------------------------------------------------------------------
 
 class PosDashboardScreen extends ConsumerStatefulWidget {
@@ -151,18 +162,21 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      elevation: 0,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             final sukli = tendered - _totalPrice;
             final isLight = Theme.of(context).brightness == Brightness.light;
+            final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
 
             return Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: isLight ? Colors.white : AppColors.surfaceDark,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                border: Border(top: BorderSide(color: borderColor, width: 1.0)),
               ),
               child: SafeArea(
                 child: Column(
@@ -174,11 +188,11 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                       children: [
                         Text(
                           tr.checkoutModalTitle,
-                          style: Theme.of(context).textTheme.titleLarge,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         IconButton(
                           onPressed: () => Navigator.pop(ctx),
-                          icon: const Icon(Icons.close),
+                          icon: const Icon(Icons.close, size: 22),
                         ),
                       ],
                     ),
@@ -195,7 +209,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                             color: AppColors.primary,
                           ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 18),
                     Text(
                       tr.cashTendered,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -227,19 +241,19 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                         }),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: sukli >= 0
                             ? AppColors.primaryLight
                             : AppColors.alertLight,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: sukli >= 0
                               ? AppColors.primary
                               : AppColors.alert,
-                          width: 2,
+                          width: 1.0,
                         ),
                       ),
                       child: Column(
@@ -249,7 +263,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                                 ? tr.customerChange
                                 : tr.insufficientCash,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
                               color: sukli >= 0
                                   ? AppColors.primary
@@ -260,7 +274,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                           Text(
                             '₱ ${sukli.abs().toStringAsFixed(2)}',
                             style: TextStyle(
-                              fontSize: 38,
+                              fontSize: 34,
                               fontWeight: FontWeight.bold,
                               color: sukli >= 0
                                   ? AppColors.primary
@@ -270,8 +284,12 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
                       onPressed: sukli < 0
                           ? null
                           : () {
@@ -304,9 +322,12 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
   ) {
     final isSelected = (selected == value);
     return ChoiceChip(
-      label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+      elevation: 0,
+      pressElevation: 0,
+      label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
       selected: isSelected,
       selectedColor: AppColors.primary,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       labelStyle: TextStyle(
         color: isSelected ? Colors.white : AppColors.textPrimaryLight,
       ),
@@ -318,6 +339,8 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
   Widget build(BuildContext context) {
     final tr = ref.watch(stringsProvider);
     final currentLang = ref.watch(languageProvider);
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
 
     return Scaffold(
       appBar: AppBar(
@@ -328,17 +351,40 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
-          // 1-Tap Language Switcher Button
+          // 1-Tap Theme Switcher Button (Flat)
           InkWell(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
+            onTap: () {
+              ref.read(themeModeProvider.notifier).toggleTheme();
+            },
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: isLight ? AppColors.backgroundLight : Colors.white10,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: borderColor, width: 0.8),
+              ),
+              child: Icon(
+                isLight ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                size: 16,
+                color: isLight ? AppColors.textPrimaryLight : AppColors.textPrimaryDark,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+
+          // 1-Tap Language Switcher Button (Flat)
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
             onTap: () {
               ref.read(languageProvider.notifier).toggleLanguage();
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(12),
+                color: isLight ? AppColors.primaryLight : AppColors.primaryDark.withAlpha(35),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.primary.withAlpha(60), width: 0.8),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -347,10 +393,10 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                   const SizedBox(width: 4),
                   Text(
                     currentLang == AppLanguage.taglish ? 'Taglish' : 'English',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 11,
-                      color: AppColors.primary,
+                      color: isLight ? AppColors.primary : AppColors.primaryDark,
                     ),
                   ),
                 ],
@@ -359,22 +405,23 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
           ),
           const SizedBox(width: 6),
 
-          // Offline Status Badge
+          // Flat Offline Status Badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(12),
+              color: isLight ? AppColors.primaryLight : AppColors.primaryDark.withAlpha(35),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.primary.withAlpha(60), width: 0.8),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.check_circle, color: AppColors.primary, size: 14),
+                Icon(Icons.check_circle, color: isLight ? AppColors.primary : AppColors.primaryDark, size: 13),
                 const SizedBox(width: 4),
                 Text(
                   tr.offlineSafe,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: isLight ? AppColors.primary : AppColors.primaryDark,
                     fontWeight: FontWeight.bold,
                     fontSize: 10,
                   ),
@@ -386,36 +433,36 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
         ],
       ),
       body: ResponsiveLayout(
-        mobile: _buildMobileLayout(tr),
-        desktop: _buildDesktopLayout(tr),
+        mobile: _buildMobileLayout(tr, borderColor),
+        desktop: _buildDesktopLayout(tr, borderColor),
       ),
       bottomNavigationBar: ResponsiveLayout.isDesktop(context)
           ? null
-          : _buildMobileCartBottomBar(tr),
+          : _buildMobileCartBottomBar(tr, borderColor),
     );
   }
 
   // Mobile View
-  Widget _buildMobileLayout(AppStrings tr) {
+  Widget _buildMobileLayout(AppStrings tr, Color borderColor) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildSearchBar(tr),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           _buildTingiGridHeader(tr),
-          const SizedBox(height: 12),
-          _buildTingiTiles(),
-          const SizedBox(height: 24),
-          _buildRecentCartList(tr),
+          const SizedBox(height: 10),
+          _buildTingiTiles(borderColor),
+          const SizedBox(height: 20),
+          _buildRecentCartList(tr, borderColor),
         ],
       ),
     );
   }
 
   // Desktop View (Split-Screen 2-Column POS Station)
-  Widget _buildDesktopLayout(AppStrings tr) {
+  Widget _buildDesktopLayout(AppStrings tr, Color borderColor) {
     return Row(
       children: [
         // Left Column (Catalog & Fast Tingi Grid)
@@ -430,18 +477,18 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                 const SizedBox(height: 20),
                 _buildTingiGridHeader(tr),
                 const SizedBox(height: 12),
-                _buildTingiTiles(),
+                _buildTingiTiles(borderColor),
               ],
             ),
           ),
         ),
-        // Right Column (Sticky Live Ticket & Checkout Panel)
+        // Right Column (Sticky Flat Live Ticket & Checkout Panel)
         Container(
           width: 340,
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
-            border: const Border(
-              left: BorderSide(color: AppColors.borderLight, width: 1.5),
+            border: Border(
+              left: BorderSide(color: borderColor, width: 1.0),
             ),
           ),
           padding: const EdgeInsets.all(16),
@@ -462,9 +509,13 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                       style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ),
-              const Divider(height: 24),
-              Expanded(child: _buildCartItemsList(tr)),
-              const Divider(height: 24),
+              const SizedBox(height: 12),
+              Divider(color: borderColor, height: 1),
+              const SizedBox(height: 12),
+              Expanded(child: _buildCartItemsList(tr, borderColor)),
+              const SizedBox(height: 12),
+              Divider(color: borderColor, height: 1),
+              const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -481,10 +532,10 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               ElevatedButton.icon(
                 onPressed: _cart.isEmpty ? null : () => _showCheckoutDialog(tr),
-                icon: const Icon(Icons.point_of_sale, size: 24),
+                icon: const Icon(Icons.point_of_sale, size: 20),
                 label: Text(tr.checkoutButton),
               ),
             ],
@@ -498,9 +549,9 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
     return TextField(
       decoration: InputDecoration(
         hintText: tr.searchPlaceholder,
-        prefixIcon: const Icon(Icons.search, size: 24),
+        prefixIcon: const Icon(Icons.search, size: 22),
         suffixIcon: IconButton(
-          icon: const Icon(Icons.qr_code_scanner, color: AppColors.primary),
+          icon: const Icon(Icons.qr_code_scanner, color: AppColors.primary, size: 22),
           onPressed: () {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -526,13 +577,13 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
         ),
         const Text(
           '1-Tap Add',
-          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
         ),
       ],
     );
   }
 
-  Widget _buildTingiTiles() {
+  Widget _buildTingiTiles(Color borderColor) {
     final items = [
       {'emoji': '🥚', 'name': 'Itlog', 'price': 10.0},
       {'emoji': '🧊', 'name': 'Yelo', 'price': 5.0},
@@ -548,8 +599,8 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
       itemCount: items.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
         childAspectRatio: 0.95,
       ),
       itemBuilder: (context, index) {
@@ -559,19 +610,24 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
         final emoji = item['emoji'] as String;
 
         return Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side: BorderSide(color: borderColor, width: 1.0),
+          ),
           child: InkWell(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             onTap: () => _addTingiItem(name, price, 1),
             child: Padding(
               padding: const EdgeInsets.all(8),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(emoji, style: const TextStyle(fontSize: 26)),
+                  Text(emoji, style: const TextStyle(fontSize: 24)),
                   const SizedBox(height: 4),
                   Text(
                     name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -581,7 +637,7 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                     style: const TextStyle(
                       color: AppColors.primary,
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                      fontSize: 13,
                     ),
                   ),
                 ],
@@ -593,21 +649,23 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
     );
   }
 
-  Widget _buildRecentCartList(AppStrings tr) {
+  Widget _buildRecentCartList(AppStrings tr, Color borderColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           tr.recentCartTitle,
-          style: Theme.of(context).textTheme.titleMedium,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 14),
         ),
         const SizedBox(height: 8),
-        _buildCartItemsList(tr),
+        _buildCartItemsList(tr, borderColor),
       ],
     );
   }
 
-  Widget _buildCartItemsList([AppStrings? tr]) {
+  Widget _buildCartItemsList([AppStrings? tr, Color? borderColor]) {
+    final border = borderColor ?? AppColors.borderLight;
+
     if (_cart.isEmpty) {
       return Center(
         child: Padding(
@@ -624,16 +682,22 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _cart.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (_, __) => const SizedBox(height: 6),
       itemBuilder: (context, index) {
         final item = _cart[index];
         return Card(
+          elevation: 0,
           margin: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side: BorderSide(color: border, width: 1.0),
+          ),
           child: ListTile(
             dense: true,
-            title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
             subtitle: Text(
               '${item.quantity}x @ ₱${item.price.toStringAsFixed(2)} ${tr?.eachPrice ?? ''}',
+              style: const TextStyle(fontSize: 11),
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -643,10 +707,11 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
+                    fontSize: 14,
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.remove_circle_outline, color: AppColors.alert, size: 20),
+                  icon: const Icon(Icons.remove_circle_outline, color: AppColors.alert, size: 18),
                   onPressed: () {
                     setState(() {
                       if (item.quantity > 1) {
@@ -665,20 +730,14 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
     );
   }
 
-  Widget _buildMobileCartBottomBar(AppStrings tr) {
+  Widget _buildMobileCartBottomBar(AppStrings tr, Color borderColor) {
     if (_cart.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, -2),
-          ),
-        ],
+        border: Border(top: BorderSide(color: borderColor, width: 1.0)),
       ),
       child: SafeArea(
         child: Row(
@@ -690,12 +749,12 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                 children: [
                   Text(
                     '$_totalItems ${tr.itemsCountLabel} sa ${tr.cartLabel.toLowerCase()}',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
                   ),
                   Text(
                     '₱ ${_totalPrice.toStringAsFixed(2)}',
                     style: const TextStyle(
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: AppColors.primary,
                     ),
@@ -706,8 +765,12 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(44),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
                 onPressed: () => _showCheckoutDialog(tr),
-                child: Text(tr.checkoutButton),
+                child: Text(tr.checkoutButton, style: const TextStyle(fontSize: 14)),
               ),
             ),
           ],

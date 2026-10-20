@@ -10,6 +10,7 @@ class DebtsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = ref.watch(stringsProvider);
     final isLight = Theme.of(context).brightness == Brightness.light;
+    final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
 
     final sampleDebts = [
       {'name': 'Aling Marites (Kapitbahay)', 'phone': '0917-123-4567', 'amount': 385.00, 'date': 'Oct 18, 2026', 'items': 'Bear Brand, Bigas 2kg, Itlog'},
@@ -29,7 +30,7 @@ class DebtsScreen extends ConsumerWidget {
         actions: [
           IconButton(
             tooltip: tr.recordNewDebt,
-            icon: const Icon(Icons.person_add_alt_1_rounded, color: AppColors.primary, size: 26),
+            icon: const Icon(Icons.person_add_alt_1_rounded, color: AppColors.primary, size: 24),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -44,23 +45,16 @@ class DebtsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Total Collectibles Banner
+          // Total Collectibles Banner (Flat Card)
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.warning, AppColors.warning.withAlpha(200)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+              color: isLight ? AppColors.warningLight : AppColors.surfaceDark,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isLight ? AppColors.warning : AppColors.warningDark,
+                width: 1.0,
               ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.warning.withAlpha(80),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,57 +64,64 @@ class DebtsScreen extends ConsumerWidget {
                   children: [
                     Text(
                       tr.totalCollectibles.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: isLight ? AppColors.warning : AppColors.warningDark,
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
-                        letterSpacing: 1.1,
+                        letterSpacing: 1.0,
                       ),
                     ),
-                    const Icon(Icons.menu_book_rounded, color: Colors.white, size: 24),
+                    Icon(
+                      Icons.menu_book_rounded,
+                      color: isLight ? AppColors.warning : AppColors.warningDark,
+                      size: 22,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '₱ ${totalCollectibles.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: isLight ? AppColors.textPrimaryLight : AppColors.textPrimaryDark,
                     fontWeight: FontWeight.bold,
-                    fontSize: 34,
+                    fontSize: 30,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   '${sampleDebts.length} ${tr.activeDebtors}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
-          // Search bar
+          // Flat Search bar
           TextField(
             decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search, color: AppColors.primary),
+              prefixIcon: const Icon(Icons.search, color: AppColors.primary, size: 22),
               hintText: tr.isTaglish ? 'Hanapin ang pangalan ng may utang...' : 'Search customer name...',
-              filled: true,
-              fillColor: isLight ? AppColors.surfaceLight : AppColors.surfaceDark,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             ),
           ),
           const SizedBox(height: 16),
 
-          // Debt Customer Cards
+          // Debt Customer Cards (Flat)
           ...sampleDebts.map((debt) {
             return Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              margin: const EdgeInsets.only(bottom: 10),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: borderColor, width: 1.0),
+              ),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -129,13 +130,13 @@ class DebtsScreen extends ConsumerWidget {
                       children: [
                         Text(
                           debt['name'] as String,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                         ),
                         Text(
                           '₱ ${(debt['amount'] as double).toStringAsFixed(2)}',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 18,
+                            fontSize: 16,
                             color: AppColors.alert,
                           ),
                         ),
@@ -144,26 +145,31 @@ class DebtsScreen extends ConsumerWidget {
                     const SizedBox(height: 4),
                     Text(
                       '📞 ${debt['phone']} • ${debt['date']}',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(fontSize: 12, color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark),
                     ),
                     const SizedBox(height: 8),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.grey.withAlpha(20),
+                        color: isLight ? AppColors.backgroundLight : Colors.black26,
                         borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: borderColor, width: 0.8),
                       ),
                       child: Text(
                         'Paninda: ${debt['items']}',
                         style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 36),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          ),
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -171,11 +177,15 @@ class DebtsScreen extends ConsumerWidget {
                               ),
                             );
                           },
-                          icon: const Icon(Icons.send_rounded, size: 16),
-                          label: Text(tr.isTaglish ? 'I-text Paalala' : 'Send Reminder'),
+                          icon: const Icon(Icons.send_rounded, size: 14),
+                          label: Text(tr.isTaglish ? 'I-text Paalala' : 'Send Reminder', style: const TextStyle(fontSize: 12)),
                         ),
                         const SizedBox(width: 8),
                         ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(0, 36),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          ),
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -184,8 +194,8 @@ class DebtsScreen extends ConsumerWidget {
                               ),
                             );
                           },
-                          icon: const Icon(Icons.check, size: 16),
-                          label: Text(tr.settleDebt),
+                          icon: const Icon(Icons.check, size: 14),
+                          label: Text(tr.settleDebt, style: const TextStyle(fontSize: 12)),
                         ),
                       ],
                     ),

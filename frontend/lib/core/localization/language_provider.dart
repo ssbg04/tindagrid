@@ -86,6 +86,10 @@ class AppStrings {
 
   // Settings Screen
   String get settingsTitle => isTaglish ? 'Pag-aayos ng Tindahan' : 'Store Settings';
+  String get themeSection => isTaglish ? 'Tema (Anyo ng Screen)' : 'Display Theme';
+  String get themeLight => isTaglish ? 'Maliwanag' : 'Light';
+  String get themeDark => isTaglish ? 'Madilim' : 'Dark';
+  String get themeSystem => isTaglish ? 'System' : 'System';
   String get languageSection => isTaglish ? 'Piliin ang Wika' : 'Display Language';
   String get cloudBackupTitle => isTaglish ? 'Cloud Backup & Sync' : 'Cloud Backup & Sync';
   String get cloudBackupSubtitle => isTaglish

@@ -10,6 +10,7 @@ class GcashScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = ref.watch(stringsProvider);
     final isLight = Theme.of(context).brightness == Brightness.light;
+    final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
 
     final feeBrackets = [
       {'range': '₱ 1 - ₱ 500', 'fee': '₱ 10.00'},
@@ -30,73 +31,81 @@ class GcashScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Float balances (Dual Balances: GCash vs Cash Box)
+          // Flat Float Balances (GCash vs Cash Box)
           Row(
             children: [
               Expanded(
-                child: _buildBalanceCard(
+                child: _buildFlatBalanceCard(
                   context,
                   title: tr.ewalletFloat,
                   amount: '₱ 8,450.00',
-                  icon: Icons.account_balance_wallet_rounded,
-                  color: Colors.blue.shade700,
+                  icon: Icons.account_balance_wallet_outlined,
+                  color: Colors.blue.shade600,
+                  borderColor: borderColor,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildBalanceCard(
+                child: _buildFlatBalanceCard(
                   context,
                   title: tr.cashBoxDrawer,
                   amount: '₱ 4,120.00',
-                  icon: Icons.payments_rounded,
+                  icon: Icons.payments_outlined,
                   color: AppColors.primary,
+                  borderColor: borderColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Flat Quick Action Buttons
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    _showFlatGcashModal(context, tr, isCashIn: true);
+                  },
+                  icon: const Icon(Icons.arrow_upward_rounded, size: 18),
+                  label: Text(tr.cashInAction, style: const TextStyle(fontSize: 14)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade600,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    minimumSize: const Size.fromHeight(46),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    _showFlatGcashModal(context, tr, isCashIn: false);
+                  },
+                  icon: const Icon(Icons.arrow_downward_rounded, size: 18),
+                  label: Text(tr.cashOutAction, style: const TextStyle(fontSize: 14)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    minimumSize: const Size.fromHeight(46),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
 
-          // Quick Action Buttons
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    _showGcashActionModal(context, tr, isCashIn: true);
-                  },
-                  icon: const Icon(Icons.arrow_upward_rounded),
-                  label: Text(tr.cashInAction),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade700,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    _showGcashActionModal(context, tr, isCashIn: false);
-                  },
-                  icon: const Icon(Icons.arrow_downward_rounded),
-                  label: Text(tr.cashOutAction),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Fee Scheduler Table Card
+          // Fee Scheduler Table (Flat Card)
           Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: borderColor, width: 1.0),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -107,13 +116,13 @@ class GcashScreen extends ConsumerWidget {
                     children: [
                       Text(
                         tr.feeSchedule,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                       ),
-                      const Icon(Icons.receipt_long_rounded, color: Colors.blue, size: 22),
+                      const Icon(Icons.receipt_long_rounded, color: Colors.blue, size: 20),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  const Divider(),
+                  const SizedBox(height: 10),
+                  Divider(color: borderColor, height: 1),
                   Table(
                     children: [
                       TableRow(
@@ -122,7 +131,11 @@ class GcashScreen extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             child: Text(
                               tr.isTaglish ? 'Halaga ng Transaksyon' : 'Transaction Range',
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark,
+                              ),
                             ),
                           ),
                           Padding(
@@ -130,7 +143,11 @@ class GcashScreen extends ConsumerWidget {
                             child: Text(
                               tr.isTaglish ? 'Patong / Tubo' : 'Fee / Profit',
                               textAlign: TextAlign.end,
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark,
+                              ),
                             ),
                           ),
                         ],
@@ -142,7 +159,7 @@ class GcashScreen extends ConsumerWidget {
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Text(
                                 f['range']!,
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
                               ),
                             ),
                             Padding(
@@ -152,7 +169,7 @@ class GcashScreen extends ConsumerWidget {
                                 textAlign: TextAlign.end,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                                  fontSize: 13,
                                   color: AppColors.primary,
                                 ),
                               ),
@@ -171,18 +188,22 @@ class GcashScreen extends ConsumerWidget {
     );
   }
 
-  void _showGcashActionModal(BuildContext context, AppStrings tr, {required bool isCashIn}) {
+  void _showFlatGcashModal(BuildContext context, AppStrings tr, {required bool isCashIn}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      elevation: 0,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         final isLight = Theme.of(ctx).brightness == Brightness.light;
+        final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
+
         return Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: isLight ? Colors.white : AppColors.surfaceDark,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            border: Border.all(color: borderColor, width: 1.0),
           ),
           child: SafeArea(
             child: Column(
@@ -193,46 +214,45 @@ class GcashScreen extends ConsumerWidget {
                   isCashIn ? tr.cashInAction : tr.cashOutAction,
                   style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 TextField(
                   keyboardType: TextInputType.phone,
                   decoration: InputDecoration(
                     labelText: tr.isTaglish ? 'Numero ng GCash (09xx...)' : 'GCash Phone Number',
-                    prefixIcon: const Icon(Icons.phone_android_rounded),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.phone_android_rounded, size: 20),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 TextField(
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
                     labelText: tr.isTaglish ? 'Halaga (Halimbawa: 500)' : 'Amount (e.g. 500)',
-                    prefixIcon: const Icon(Icons.attach_money_rounded),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.attach_money_rounded, size: 20),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: AppColors.primaryLight,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.primary.withAlpha(60), width: 1.0),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         tr.isTaglish ? 'Awtomatikong Patong (Fee):' : 'Calculated Convenience Fee:',
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary),
                       ),
                       const Text(
                         '₱ 10.00',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primary),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primary),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.pop(ctx);
@@ -253,20 +273,21 @@ class GcashScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBalanceCard(
+  Widget _buildFlatBalanceCard(
     BuildContext context, {
     required String title,
     required String amount,
     required IconData icon,
     required Color color,
+    required Color borderColor,
   }) {
     final isLight = Theme.of(context).brightness == Brightness.light;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isLight ? Colors.white : AppColors.surfaceDark,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withAlpha(60)),
+        color: isLight ? AppColors.surfaceLight : AppColors.surfaceDark,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: borderColor, width: 1.0),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -274,24 +295,28 @@ class GcashScreen extends ConsumerWidget {
           Row(
             children: [
               CircleAvatar(
-                backgroundColor: color.withAlpha(30),
-                radius: 18,
-                child: Icon(icon, color: color, size: 20),
+                backgroundColor: color.withAlpha(25),
+                radius: 16,
+                child: Icon(icon, color: color, size: 18),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark,
+                    fontWeight: FontWeight.bold,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Text(
             amount,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
           ),
         ],
       ),

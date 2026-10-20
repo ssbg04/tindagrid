@@ -10,6 +10,7 @@ class InventoryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tr = ref.watch(stringsProvider);
     final isLight = Theme.of(context).brightness == Brightness.light;
+    final borderColor = isLight ? AppColors.borderLight : AppColors.borderDark;
 
     // Sample inventory items
     final sampleProducts = [
@@ -32,7 +33,7 @@ class InventoryScreen extends ConsumerWidget {
         actions: [
           IconButton(
             tooltip: tr.addProduct,
-            icon: const Icon(Icons.add_circle, color: AppColors.primary, size: 28),
+            icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: 24),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -47,72 +48,76 @@ class InventoryScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Inventory Summary Cards
+          // Flat Inventory Summary Cards
           Row(
             children: [
               Expanded(
-                child: _buildSummaryCard(
+                child: _buildFlatSummaryCard(
                   context,
                   title: tr.totalProducts,
                   value: '${sampleProducts.length}',
-                  icon: Icons.inventory_2_rounded,
+                  icon: Icons.inventory_2_outlined,
                   color: AppColors.primary,
+                  borderColor: borderColor,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildSummaryCard(
+                child: _buildFlatSummaryCard(
                   context,
                   title: tr.lowStockWarning,
                   value: '2',
                   icon: Icons.warning_amber_rounded,
                   color: AppColors.alert,
+                  borderColor: borderColor,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
 
-          // Search bar
+          // Flat Search bar
           TextField(
             decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search, color: AppColors.primary),
+              prefixIcon: const Icon(Icons.search, color: AppColors.primary, size: 22),
               hintText: tr.searchPlaceholder,
-              filled: true,
-              fillColor: isLight ? AppColors.surfaceLight : AppColors.surfaceDark,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             ),
           ),
           const SizedBox(height: 16),
 
-          // Product List
+          // Product List (Flat Cards)
           ...sampleProducts.map((p) {
             final int stock = p['stock'] as int;
             final isLow = stock <= 6;
             return Card(
-              margin: const EdgeInsets.only(bottom: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              margin: const EdgeInsets.only(bottom: 8),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+                side: BorderSide(color: borderColor, width: 1.0),
+              ),
               child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                dense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 leading: CircleAvatar(
+                  radius: 18,
                   backgroundColor: isLow ? AppColors.alertLight : AppColors.primaryLight,
                   child: Icon(
                     Icons.shopping_bag_outlined,
                     color: isLow ? AppColors.alert : AppColors.primary,
+                    size: 18,
                   ),
                 ),
                 title: Text(
                   p['name'] as String,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    '${p['barcode']} • ${tr.costPrice}: ₱${(p['cost'] as double).toStringAsFixed(2)}',
-                    style: const TextStyle(fontSize: 12),
+                subtitle: Text(
+                  '${p['barcode']} • ${tr.costPrice}: ₱${(p['cost'] as double).toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark,
                   ),
                 ),
                 trailing: Column(
@@ -122,22 +127,28 @@ class InventoryScreen extends ConsumerWidget {
                     Text(
                       '₱${(p['price'] as double).toStringAsFixed(2)}',
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.bold,
                         color: AppColors.primary,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                       decoration: BoxDecoration(
-                        color: isLow ? AppColors.alertLight : Colors.grey.withAlpha(40),
-                        borderRadius: BorderRadius.circular(8),
+                        color: isLow
+                            ? AppColors.alertLight
+                            : (isLight ? AppColors.backgroundLight : Colors.white10),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: isLow ? AppColors.alert.withAlpha(80) : borderColor,
+                          width: 0.8,
+                        ),
                       ),
                       child: Text(
                         '$stock ${tr.inStock}',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 10,
                           fontWeight: FontWeight.bold,
                           color: isLow ? AppColors.alert : null,
                         ),
@@ -153,40 +164,45 @@ class InventoryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSummaryCard(
+  Widget _buildFlatSummaryCard(
     BuildContext context, {
     required String title,
     required String value,
     required IconData icon,
     required Color color,
+    required Color borderColor,
   }) {
     final isLight = Theme.of(context).brightness == Brightness.light;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isLight ? Colors.white : AppColors.surfaceDark,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withAlpha(60)),
+        color: isLight ? AppColors.surfaceLight : AppColors.surfaceDark,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: borderColor, width: 1.0),
       ),
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: color.withAlpha(30),
-            radius: 20,
-            child: Icon(icon, color: color, size: 22),
+            backgroundColor: color.withAlpha(25),
+            radius: 18,
+            child: Icon(icon, color: color, size: 20),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isLight ? AppColors.textSecondaryLight : AppColors.textSecondaryDark,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   value,
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
                 ),
               ],
             ),

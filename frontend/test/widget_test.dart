@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tindagrid/main.dart';
 
 void main() {
-  testWidgets('TindaGrid navigation and bilingual test', (WidgetTester tester) async {
+  testWidgets('TindaGrid navigation, flat theme, and bilingual test', (WidgetTester tester) async {
     // Provide a standard phone screen size
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 2.0;
@@ -29,7 +29,19 @@ void main() {
     expect(find.text('GCash'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
 
-    // 3. Test 1-Tap Language Toggle in AppBar (Taglish -> English)
+    // 3. Test 1-Tap Theme Toggle in AppBar
+    final themeToggleIcon = find.byIcon(Icons.light_mode_outlined);
+    final darkToggleIcon = find.byIcon(Icons.dark_mode_outlined);
+    expect(themeToggleIcon.evaluate().isNotEmpty || darkToggleIcon.evaluate().isNotEmpty, isTrue);
+
+    if (themeToggleIcon.evaluate().isNotEmpty) {
+      await tester.tap(themeToggleIcon);
+    } else {
+      await tester.tap(darkToggleIcon);
+    }
+    await tester.pumpAndSettle();
+
+    // 4. Test 1-Tap Language Toggle in AppBar (Taglish -> English)
     final langToggle = find.text('Taglish');
     expect(langToggle, findsOneWidget);
     await tester.tap(langToggle);
@@ -41,26 +53,37 @@ void main() {
     expect(find.text('Inventory'), findsOneWidget);
     expect(find.text('Debts'), findsOneWidget);
 
-    // 4. Test Navigation Bar Switch to Settings Screen
+    // 5. Test Navigation Bar Switch to Settings Screen
     await tester.tap(find.text('Settings'));
     await tester.pumpAndSettle();
 
-    // Settings screen should be visible with English labels
+    // Settings screen should be visible with English labels & Theme controls
     expect(find.text('Store Settings'), findsOneWidget);
+    expect(find.text('Display Theme'), findsOneWidget);
+    expect(find.text('Light'), findsOneWidget);
+    expect(find.text('Dark'), findsOneWidget);
+    expect(find.text('System'), findsOneWidget);
     expect(find.text('Display Language'), findsOneWidget);
     expect(find.text('Cloud Backup & Sync'), findsOneWidget);
 
-    // 5. Test Switching back to Taglish via Settings button
+    // Test Theme selection on Settings screen
+    await tester.tap(find.text('Dark'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Light'));
+    await tester.pumpAndSettle();
+
+    // 6. Test Switching back to Taglish via Settings button
     await tester.tap(find.text('Taglish'));
     await tester.pumpAndSettle();
 
     // Settings screen should update to Taglish labels
     expect(find.text('Pag-aayos ng Tindahan'), findsOneWidget);
+    expect(find.text('Tema (Anyo ng Screen)'), findsOneWidget);
     expect(find.text('Piliin ang Wika'), findsOneWidget);
     expect(find.text('Paninda'), findsOneWidget);
     expect(find.text('Utang'), findsOneWidget);
 
-    // 6. Navigate back to POS
+    // 7. Navigate back to POS
     await tester.tap(find.text('POS'));
     await tester.pumpAndSettle();
 
