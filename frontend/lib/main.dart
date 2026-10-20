@@ -23,6 +23,7 @@ import 'core/sync/companion_scanner_service.dart';
 import 'core/utils/barcode_keyboard_listener.dart';
 import 'features/inventory/quick_add_product_dialog.dart';
 import 'features/pos/tingi_visual_grid.dart';
+import 'features/assistant/assistant_drawer.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
 
@@ -88,6 +89,12 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
 
     return Scaffold(
       body: _screens[_currentIndex],
+      floatingActionButton: FloatingActionButton.small(
+        onPressed: () => AssistantDrawer.show(context),
+        backgroundColor: Colors.purple.shade700,
+        tooltip: 'TindaBot Offline AI',
+        child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: isLight ? AppColors.surfaceLight : AppColors.surfaceDark,
@@ -923,6 +930,36 @@ class _PosDashboardScreenState extends ConsumerState<PosDashboardScreen> {
                           : (isLight ? AppColors.primary : AppColors.primaryDark),
                       fontWeight: FontWeight.w700,
                       fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+
+          // TindaBot Offline AI Assistant Button
+          InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: () => AssistantDrawer.show(context),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.purple.withAlpha(25),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.purple.withAlpha(60), width: 0.8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.auto_awesome_rounded, color: Colors.purple, size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    'AI Bot',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                      color: Colors.purple.shade700,
                     ),
                   ),
                 ],

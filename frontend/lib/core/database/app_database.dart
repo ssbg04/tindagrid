@@ -46,6 +46,42 @@ class DualFloatBalance {
   });
 }
 
+class AssistantSalesSummary {
+  final int totalSalesCount;
+  final double totalRevenue;
+  final double totalProfit;
+  final double cashRevenue;
+  final double gcashRevenue;
+
+  const AssistantSalesSummary({
+    required this.totalSalesCount,
+    required this.totalRevenue,
+    required this.totalProfit,
+    required this.cashRevenue,
+    required this.gcashRevenue,
+  });
+}
+
+class AssistantGcashSummary {
+  final double totalFees;
+  final int cashInCount;
+  final double cashInVolume;
+  final int cashOutCount;
+  final double cashOutVolume;
+  final int storePaymentCount;
+  final double storePaymentVolume;
+
+  const AssistantGcashSummary({
+    required this.totalFees,
+    required this.cashInCount,
+    required this.cashInVolume,
+    required this.cashOutCount,
+    required this.cashOutVolume,
+    required this.storePaymentCount,
+    required this.storePaymentVolume,
+  });
+}
+
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
@@ -559,6 +595,117 @@ class AppDatabase extends _$AppDatabase {
         },
       );
     });
+  }
+
+  // --------------------------------------------------------------------------
+  // OFFLINE AI ASSISTANT QUERIES
+  // --------------------------------------------------------------------------
+
+  /// Query top customers with largest unpaid debt balance
+  Future<List<Debt>> getTopDebtors({int limit = 5}) {
+    return (select(debts)
+          ..where((d) =>
+              (d.status.equals('PENDING') | d.status.equals('PARTIALLY_PAID')) &
+              d.remainingBalance.isBiggerThanValue(0.0))
+          ..orderBy([(d) => OrderingTerm.desc(d.remainingBalance)])
+          ..limit(limit))
+        .get();
+  }
+
+  /// Query products below minimum safety threshold (e.g. 5 units)
+  Future<List<Product>> getLowStockProducts({double threshold = 5.0}) {
+    return (select(products)
+          ..where((p) => p.currentStock.isSmallerOrEqualValue(threshold) & p.isDeleted.equals(false))
+          ..orderBy([(p) => OrderingTerm.asc(p.currentStock)]))
+        .get();
+  }
+
+  /// Query sales summary by date range and payment method
+  Future<AssistantSalesSummary> getSalesSummaryForAssistant({DateTime? startDate, DateTime? endDate}) async {
+    var query = select(sales);
+    if (startDate != null) {
+      query = query..where((s) => s.timestamp.isBiggerOrEqualValue(startDate));
+    }
+    if (endDate != null) {
+      query = query..where((s) => s.timestamp.isSmallerOrEqualValue(endDate));
+    }
+
+    final salesList = await query.get();
+    double totalRevenue = 0.0;
+    double totalProfit = 0.0;
+    double cashRevenue = 0.0;
+    double gcashRevenue = 0.0;
+
+    for (final s in salesList) {
+      totalRevenue += s.totalAmount;
+      totalProfit += s.totalProfit;
+      if (s.paymentMethod == 'CASH') {
+        cashRevenue += s.totalAmount;
+      } else if (s.paymentMethod == 'GCASH') {
+        gcashRevenue += s.totalAmount;
+      }
+    }
+
+    return AssistantSalesSummary(
+      totalSalesCount: salesList.length,
+      totalRevenue: totalRevenue,
+      totalProfit: totalProfit,
+      cashRevenue: cashRevenue,
+      gcashRevenue: gcashRevenue,
+    );
+  }
+
+  /// Query GCash fees profit and transaction counts
+  Future<AssistantGcashSummary> getGcashProfitSummaryForAssistant({DateTime? startDate, DateTime? endDate}) async {
+    var query = select(gcashLedger);
+    if (startDate != null) {
+      query = query..where((g) => g.timestamp.isBiggerOrEqualValue(startDate));
+    }
+    if (endDate != null) {
+      query = query..where((g) => g.timestamp.isSmallerOrEqualValue(endDate));
+    }
+
+    final list = await query.get();
+    double totalFees = 0.0;
+    int cashInCount = 0;
+    double cashInVolume = 0.0;
+    int cashOutCount = 0;
+    double cashOutVolume = 0.0;
+    int storePaymentCount = 0;
+    double storePaymentVolume = 0.0;
+
+    for (final tx in list) {
+      totalFees += tx.feeCharged;
+      if (tx.transactionType == 'CASH_IN') {
+        cashInCount++;
+        cashInVolume += tx.amount;
+      } else if (tx.transactionType == 'CASH_OUT') {
+        cashOutCount++;
+        cashOutVolume += tx.amount;
+      } else if (tx.transactionType == 'STORE_PAYMENT') {
+        storePaymentCount++;
+        storePaymentVolume += tx.amount;
+      }
+    }
+
+    return AssistantGcashSummary(
+      totalFees: totalFees,
+      cashInCount: cashInCount,
+      cashInVolume: cashInVolume,
+      cashOutCount: cashOutCount,
+      cashOutVolume: cashOutVolume,
+      storePaymentCount: storePaymentCount,
+      storePaymentVolume: storePaymentVolume,
+    );
+  }
+
+  /// Query upcoming supplier payables
+  Future<List<Payable>> getUpcomingPayables({int limit = 5}) {
+    return (select(payables)
+          ..where((p) => p.status.equals('UNPAID') | p.status.equals('PARTIALLY_PAID'))
+          ..orderBy([(p) => OrderingTerm.asc(p.dueDate)])
+          ..limit(limit))
+        .get();
   }
 
   // --------------------------------------------------------------------------
